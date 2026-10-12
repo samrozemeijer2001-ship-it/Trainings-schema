@@ -2,25 +2,25 @@
    Eigen bestanden: eerst netwerk (zodat updates direct zichtbaar zijn), anders uit cache.
    Lettertypes van Google: uit cache, anders netwerk.
    Verhoog VERSION als je bestanden wijzigt. */
-const VERSION = "v5";
+const VERSION = "v6";
 const CACHE = "casrc-training-" + VERSION;
 const FONT_CACHE = "casrc-training-fonts";
 
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css",
-  "./i18n.js",
-  "./data.js",
-  "./store.js",
-  "./stats.js",
-  "./app.js",
-  "./manifest.webmanifest",
-  "./icons/logo.svg",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/icon-512-maskable.png",
-  "./icons/apple-touch-icon.png"
+  "./style.css?v=6",
+  "./i18n.js?v=6",
+  "./data.js?v=6",
+  "./store.js?v=6",
+  "./stats.js?v=6",
+  "./app.js?v=6",
+  "./manifest.webmanifest?v=6",
+  "./icons/logo.svg?v=6",
+  "./icons/icon-192.png?v=6",
+  "./icons/icon-512.png?v=6",
+  "./icons/icon-512-maskable.png?v=6",
+  "./icons/apple-touch-icon.png?v=6"
 ];
 
 self.addEventListener("install", (e) => {

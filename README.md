@@ -27,11 +27,23 @@ en een Stats-pagina met je progressie.
 ## Online zetten met GitHub Pages
 
 1. Maak op github.com een nieuwe repository, bijvoorbeeld `casrc-training` (Public).
-2. Klik **Add file → Upload files** en sleep alle bestanden **én** de map `icons` erin. Klik **Commit changes**.
-3. Ga naar **Settings → Pages**. Kies bij *Source* **Deploy from a branch**, branch **main**, map **/ (root)**, en klik **Save**.
-4. Na 1 à 2 minuten staat de app op `https://<jouw-gebruikersnaam>.github.io/casrc-training/`.
+2. Pak de zip uit en **open de map** `casrc-training`.
+3. Selecteer **alles wat erin staat** (ook de map `icons`) en sleep dat in GitHub via **Add file → Upload files**. Klik **Commit changes**.
+   Sleep dus niet de map `casrc-training` zelf, anders komt alles in een submap en ziet de site het niet.
+4. Ga naar **Settings → Pages**. Kies bij *Source* **Deploy from a branch**, branch **main**, map **/ (root)**, en klik **Save**.
+5. Na 1 à 2 minuten staat de app op `https://<jouw-gebruikersnaam>.github.io/casrc-training/`.
 
-Update je een bestaande versie? Upload de nieuwe bestanden over de oude heen.
+In de repository moet het er zo uitzien (index.html in de hoofdmap):
+
+```
+index.html   style.css   app.js   data.js   i18n.js   store.js   stats.js
+sw.js   manifest.webmanifest   README.md
+icons/  (logo.svg, icon-192.png, icon-512.png, icon-512-maskable.png, apple-touch-icon.png)
+```
+
+**Updaten:** sleep alles opnieuw op dezelfde manier; GitHub overschrijft de oude bestanden.
+Zie je de nieuwe versie niet meteen? GitHub Pages heeft tot ~10 minuten nodig. Sluit de app daarna helemaal af en open hem opnieuw.
+Het icoon op je beginscherm ververst pas als je de app verwijdert en opnieuw toevoegt.
 
 ## Op het beginscherm zetten
 
@@ -70,7 +82,11 @@ Na één keer openen met internet werkt alles ook zonder bereik, behalve de "Uit
 ## Nieuw schema?
 
 Pas `data.js` aan. Houd de **namen** van oefeningen gelijk als je hun geschiedenis wilt behouden.
-Verhoog daarna in `sw.js` de regel `const VERSION = "v4";` (naar `"v5"` enz.) zodat telefoons de nieuwe versie ophalen.
+Verhoog daarna het versienummer, zodat telefoons de nieuwe versie ophalen:
+- in `sw.js`: `const VERSION = "v6";` en de `?v=6` achter de bestanden,
+- in `index.html` en `manifest.webmanifest`: elke `?v=6`.
+
+Tip: zoek-en-vervang `v=6` door `v=7` in die drie bestanden en zet `VERSION` op `"v7"`.
 
 ## Lokaal testen
 

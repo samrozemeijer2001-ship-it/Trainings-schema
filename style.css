@@ -83,7 +83,8 @@ button { cursor: pointer; touch-action: manipulation; }
 .navrow .lang button { min-height: 44px; }
 .navrow .lang button + button { border-left-color: var(--chalk); }
 .navrow .lang button:not([aria-pressed="true"]) { color: var(--chalk); }
-.mark { flex: none; width: clamp(40px, 12vw, 56px); height: auto; margin-top: -4px; }
+.mark { flex: none; width: clamp(40px, 12vw, 56px); height: clamp(40px, 12vw, 56px); margin-top: -4px; }
+.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 
 /* ---------- Flits als de rust voorbij is ---------- */
 .flash {
@@ -100,7 +101,7 @@ button { cursor: pointer; touch-action: manipulation; }
   text-align: center;
   cursor: pointer;
 }
-.flash img { width: 120px; height: auto; background: var(--pitch); padding: 10px; }
+.flash-mark { width: 120px; height: 120px; background: var(--pitch); padding: 10px; }
 .flash strong {
   font-family: var(--display);
   font-weight: 900;

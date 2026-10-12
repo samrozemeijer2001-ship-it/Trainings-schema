@@ -1,28 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Cas RC fazant: lijf = rugbybal, staart = snelheidslijnen -->
-  <g transform="translate(256 262) scale(.84) translate(-256 -262)">
-    <g fill="#f5c518">
-      <!-- staartveren -->
-      <path d="M176 322 L22 482 L52 486 L196 342 Z"/>
-      <path d="M206 342 L98 500 L126 500 L226 356 Z"/>
-      <path d="M156 300 L6 416 L26 434 L176 320 Z"/>
-      <!-- lijf: rugbybal -->
-      <ellipse cx="268" cy="280" rx="134" ry="84" transform="rotate(-34 268 280)"/>
-      <!-- hals -->
-      <path d="M318 222 L376 140 L424 150 L392 252 Z"/>
-      <!-- kop met oorpluim -->
-      <circle cx="402" cy="132" r="42"/>
-      <path d="M366 112 L340 70 L392 96 Z"/>
-      <!-- snavel -->
-      <path d="M438 116 L490 134 L436 148 Z"/>
-    </g>
-    <!-- naad en steken -->
-    <g stroke="#0d0d0b" stroke-width="12" stroke-linecap="round" fill="none">
-      <path d="M176 340 Q268 296 352 224"/>
-      <path d="M228 302 L214 286 M256 286 L242 268 M284 268 L270 250 M312 248 L298 230"/>
-    </g>
-    <!-- oogmasker (bij een fazant de rode lel) met oog -->
-    <path d="M384 108 Q412 96 432 124 Q414 150 386 140 Q376 124 384 108 Z" fill="#0d0d0b"/>
-    <circle cx="410" cy="122" r="8" fill="#f5c518"/>
-  </g>
+  <!-- Cas RC kettlebell: één gele gradient over handvat en bol -->
+  <defs>
+    <linearGradient id="cas-kb" x1="140" y1="90" x2="380" y2="446" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffe680"/>
+      <stop offset=".5" stop-color="#f5c518"/>
+      <stop offset="1" stop-color="#d98e04"/>
+    </linearGradient>
+    <clipPath id="cas-kb-base">
+      <rect x="0" y="0" width="512" height="440"/>
+    </clipPath>
+  </defs>
+  <!-- handvat: loopt uit naar de schouders van de bol -->
+  <path d="M168 268 C142 196 150 108 256 106 C362 108 370 196 344 268"
+        fill="none" stroke="url(#cas-kb)" stroke-width="36" stroke-linecap="round"/>
+  <!-- bol met vlakke voet -->
+  <circle cx="256" cy="320" r="132" fill="url(#cas-kb)" clip-path="url(#cas-kb-base)"/>
 </svg>
