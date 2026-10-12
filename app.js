@@ -348,14 +348,38 @@
     tick = null;
     timerEl.classList.remove("running", "next");
     tlabel.textContent = t("rest");
-    if (finished) { timerEl.classList.add("finished"); beep(); }
-    else { timerEl.classList.remove("finished"); clock.textContent = "0:00"; }
+    if (finished) { timerEl.classList.add("finished"); beep(); showFlash(); }
+    else { timerEl.classList.remove("finished"); clock.textContent = "0:00"; hideFlash(); }
   }
+
+  /* ---------- Schermvullende flits als de rust voorbij is ----------
+     Knippert 30 sec geel/zwart (max 2× per sec), blijft daarna geel
+     tot je ergens tikt. Herhaalt piep + trilling na 10 en 20 sec. */
+  const flash = $("flash");
+  let flashTimers = [];
+
+  function showFlash() {
+    hideFlash();
+    $("flashText").textContent = t("flashText");
+    flash.hidden = false;
+    flash.classList.add("blink");
+    flashTimers.push(setTimeout(beep, 10000), setTimeout(beep, 20000));
+    flashTimers.push(setTimeout(() => flash.classList.remove("blink"), 30000));
+  }
+
+  function hideFlash() {
+    flashTimers.forEach(clearTimeout);
+    flashTimers = [];
+    flash.hidden = true;
+    flash.classList.remove("blink");
+  }
+
+  flash.addEventListener("click", () => { hideFlash(); timerEl.classList.remove("finished"); });
 
   timerEl.addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (!b) return;
-    if (b.id === "stop") stopTimer(false); else startTimer(+b.dataset.s);
+    if (b.id === "stop") stopTimer(false); else { hideFlash(); startTimer(+b.dataset.s); }
   });
 
   document.addEventListener("visibilitychange", () => {

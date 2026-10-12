@@ -70,7 +70,7 @@ Na één keer openen met internet werkt alles ook zonder bereik, behalve de "Uit
 ## Nieuw schema?
 
 Pas `data.js` aan. Houd de **namen** van oefeningen gelijk als je hun geschiedenis wilt behouden.
-Verhoog daarna in `sw.js` de regel `const VERSION = "v3";` (naar `"v4"` enz.) zodat telefoons de nieuwe versie ophalen.
+Verhoog daarna in `sw.js` de regel `const VERSION = "v4";` (naar `"v5"` enz.) zodat telefoons de nieuwe versie ophalen.
 
 ## Lokaal testen
 

@@ -11,6 +11,7 @@
 
   <!-- Beginscherm / app-modus -->
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="icons/logo.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,15 +31,18 @@
 
   <header class="wrap top">
     <div class="titlerow">
+      <img class="mark" src="icons/logo.svg" alt="" width="52" height="52">
       <h1 data-i18n="title">Trainingsweek</h1>
+    </div>
+    <div class="navrow">
+      <div class="viewtabs" role="tablist" data-i18n-aria="viewAria" aria-label="Weergave">
+        <button type="button" role="tab" id="tab-schema" data-view="schema" aria-selected="true" data-i18n="tabSchema">Schema</button>
+        <button type="button" role="tab" id="tab-stats" data-view="stats" aria-selected="false" data-i18n="tabStats">Stats</button>
+      </div>
       <div class="lang" role="group" data-i18n-aria="langAria" aria-label="Taal">
         <button type="button" data-lang="nl" aria-pressed="true">NL</button>
         <button type="button" data-lang="en" aria-pressed="false">EN</button>
       </div>
-    </div>
-    <div class="viewtabs" role="tablist" data-i18n-aria="viewAria" aria-label="Weergave">
-      <button type="button" role="tab" id="tab-schema" data-view="schema" aria-selected="true" data-i18n="tabSchema">Schema</button>
-      <button type="button" role="tab" id="tab-stats" data-view="stats" aria-selected="false" data-i18n="tabStats">Stats</button>
     </div>
   </header>
 
@@ -65,6 +69,13 @@
         <button type="button" class="stop" id="stop" data-i18n="stop">Stop</button>
       </div>
     </div>
+  </div>
+
+  <!-- Schermvullende flits als de rust voorbij is -->
+  <div class="flash" id="flash" role="alert" hidden>
+    <img src="icons/logo.svg" alt="" width="120" height="120">
+    <strong>GO</strong>
+    <span id="flashText"></span>
   </div>
 
   <noscript><p class="wrap">Zet JavaScript aan om het schema te zien. / Turn on JavaScript to see the programme.</p></noscript>

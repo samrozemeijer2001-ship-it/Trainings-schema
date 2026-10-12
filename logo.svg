@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Cas RC kettlebell: één gele gradient over handvat en bol -->
+  <defs>
+    <linearGradient id="cas-kb" x1="140" y1="90" x2="380" y2="446" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffe680"/>
+      <stop offset=".5" stop-color="#f5c518"/>
+      <stop offset="1" stop-color="#d98e04"/>
+    </linearGradient>
+    <clipPath id="cas-kb-base">
+      <rect x="0" y="0" width="512" height="440"/>
+    </clipPath>
+  </defs>
+  <!-- handvat: loopt uit naar de schouders van de bol -->
+  <path d="M168 268 C142 196 150 108 256 106 C362 108 370 196 344 268"
+        fill="none" stroke="url(#cas-kb)" stroke-width="36" stroke-linecap="round"/>
+  <!-- bol met vlakke voet -->
+  <circle cx="256" cy="320" r="132" fill="url(#cas-kb)" clip-path="url(#cas-kb-base)"/>
+</svg>

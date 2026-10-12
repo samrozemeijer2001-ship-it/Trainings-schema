@@ -75,7 +75,48 @@ button { cursor: pointer; touch-action: manipulation; }
 
 .top { padding-block: 16px 10px; }
 
-.titlerow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.titlerow { display: flex; align-items: flex-start; gap: 10px; }
+.titlerow h1 { flex: 1; }
+.navrow { display: flex; gap: 8px; margin-top: 14px; align-items: stretch; }
+.navrow .viewtabs { flex: 1; min-width: 0; margin-top: 0; }
+.navrow .lang { border-color: var(--chalk); }
+.navrow .lang button { min-height: 44px; }
+.navrow .lang button + button { border-left-color: var(--chalk); }
+.navrow .lang button:not([aria-pressed="true"]) { color: var(--chalk); }
+.mark { flex: none; width: clamp(40px, 12vw, 56px); height: auto; margin-top: -4px; }
+
+/* ---------- Flits als de rust voorbij is ---------- */
+.flash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: calc(var(--safe-t) + 24px) 24px calc(var(--safe-b) + 24px);
+  background: var(--cas);
+  color: var(--cas-ink);
+  text-align: center;
+  cursor: pointer;
+}
+.flash img { width: 120px; height: auto; background: var(--pitch); padding: 10px; }
+.flash strong {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(110px, 38vw, 220px);
+  line-height: .85;
+}
+.flash span { font-family: var(--mono); font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+/* 2 wissels per seconde: opvallend, maar onder de grens voor lichtgevoeligheid */
+.flash.blink { animation: flash-bg 1s steps(1, end) infinite; }
+@keyframes flash-bg {
+  0%   { background: var(--cas); color: var(--cas-ink); }
+  50%  { background: var(--pitch); color: var(--cas); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flash.blink { animation-duration: 2s; }
+}
 
 h1 {
   min-width: 0;
@@ -436,7 +477,7 @@ footer {
 .viewtabs {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border: 2px solid var(--chalk);
 }
 .viewtabs button {
@@ -445,7 +486,8 @@ footer {
   background: none;
   font-family: var(--display);
   font-weight: 900;
-  font-size: 20px;
+  font-size: clamp(16px, 5.2vw, 20px);
+  padding: 0 4px;
   letter-spacing: .04em;
   text-transform: uppercase;
 }
