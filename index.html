@@ -4,9 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Cas RC Trainingsweek</title>
-  <meta name="description" content="Weekschema krachttraining Castricumse Rugby Club">
+  <meta name="description" content="Cas RC training programme">
   <meta name="theme-color" content="#0d0d0b">
   <meta name="color-scheme" content="dark">
+  <meta name="format-detection" content="telephone=no">
 
   <!-- Beginscherm / app-modus -->
   <link rel="manifest" href="manifest.webmanifest">
@@ -28,15 +29,20 @@
   <div class="hoops" aria-hidden="true"></div>
 
   <header class="wrap top">
-    <div class="club">Castricumse Rugby Club · Wouterland</div>
-    <h1>Trainings&shy;week</h1>
-    <div class="viewtabs" role="tablist" aria-label="Weergave">
-      <button type="button" role="tab" id="tab-schema" data-view="schema" aria-selected="true">Schema</button>
-      <button type="button" role="tab" id="tab-stats" data-view="stats" aria-selected="false">Stats</button>
+    <div class="titlerow">
+      <h1 data-i18n="title">Trainingsweek</h1>
+      <div class="lang" role="group" data-i18n-aria="langAria" aria-label="Taal">
+        <button type="button" data-lang="nl" aria-pressed="true">NL</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+    <div class="viewtabs" role="tablist" data-i18n-aria="viewAria" aria-label="Weergave">
+      <button type="button" role="tab" id="tab-schema" data-view="schema" aria-selected="true" data-i18n="tabSchema">Schema</button>
+      <button type="button" role="tab" id="tab-stats" data-view="stats" aria-selected="false" data-i18n="tabStats">Stats</button>
     </div>
   </header>
 
-  <nav class="days" id="daysNav" aria-label="Dagen van de week">
+  <nav class="days" id="daysNav" data-i18n-aria="daysAria" aria-label="Dagen van de week">
     <div class="wrap days-grid" id="days" role="tablist"></div>
   </nav>
 
@@ -48,20 +54,22 @@
   <div class="timer" id="timer">
     <div class="wrap timer-row">
       <div class="clock-box">
-        <span class="tlabel">Rust</span>
+        <span class="tlabel" id="tlabel" data-i18n="rest">Rust</span>
         <span class="clock" id="clock">0:00</span>
       </div>
       <div class="tbtns">
+        <button type="button" data-s="30">30s</button>
         <button type="button" data-s="60">60s</button>
         <button type="button" data-s="90">90s</button>
         <button type="button" data-s="120">2m</button>
-        <button type="button" class="stop" id="stop">Stop</button>
+        <button type="button" class="stop" id="stop" data-i18n="stop">Stop</button>
       </div>
     </div>
   </div>
 
-  <noscript><p class="wrap">Zet JavaScript aan om het schema te zien.</p></noscript>
+  <noscript><p class="wrap">Zet JavaScript aan om het schema te zien. / Turn on JavaScript to see the programme.</p></noscript>
 
+  <script src="i18n.js"></script>
   <script src="data.js"></script>
   <script src="store.js"></script>
   <script src="stats.js"></script>

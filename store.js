@@ -29,7 +29,7 @@ const Store = (function () {
     const n = parseFloat(String(v).replace(",", ".").replace(/[^0-9.]/g, ""));
     return Number.isFinite(n) && n >= 0 && n < 1000 ? Math.round(n * 100) / 100 : null;
   }
-  const fmtKg = (n) => (Math.round(n * 10) / 10).toString().replace(".", ",");
+  const fmtKg = (n) => { const s = (Math.round(n * 10) / 10).toString(); return I18N.lang === "nl" ? s.replace(".", ",") : s; };
   const numReps = (r) => (typeof r === "number" ? r : null);
   /** Geschatte 1RM (Epley). Bij tijd-oefeningen of onbekende reps: het gewicht zelf. */
   const strength = (kg, reps) => (kg > 0 ? (numReps(reps) ? kg * (1 + numReps(reps) / 30) : kg) : 0);
@@ -163,7 +163,7 @@ const Store = (function () {
 
     importJson(text) {
       const data = JSON.parse(text);
-      if (!data || data.app !== "casrc-training" || typeof data.log !== "object") throw new Error("Dit is geen Cas RC back-up.");
+      if (!data || data.app !== "casrc-training" || typeof data.log !== "object") throw new Error("notBackup");
       let n = 0;
       Object.keys(data.log).forEach((id) => {
         Object.keys(data.log[id] || {}).forEach((d) => {
@@ -174,7 +174,7 @@ const Store = (function () {
           n++;
         });
       });
-      if (!persist()) throw new Error("Opslaan is mislukt.");
+      if (!persist()) throw new Error("saveFail");
       return n;
     }
   };

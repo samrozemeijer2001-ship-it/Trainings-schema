@@ -4,13 +4,20 @@ Mobiele trainingsapp voor het weekschema (Lower / Upper / Full Body) in Cas RC g
 Sets aftikken, kg invullen met je vorige gewicht ernaast, rusttimer, uitlegvideo per oefening
 en een Stats-pagina met je progressie.
 
+## Taal en rusttimer
+
+- Rechtsboven wissel je tussen **NL** en **EN**. De keuze wordt onthouden; nieuwe gebruikers krijgen de taal van hun telefoon.
+- Na een afgetikte set start de rusttimer vanzelf: 1 min bij Power (P), 2 min bij de hoofdoefening (A), en bij supersets pas na de laatste oefening van de ronde (na B1 staat er "Nu B2"). Je kunt altijd zelf 30s, 60s, 90s of 2m kiezen.
+- Deze rusttijden zijn standaardwaarden; pas ze aan in `data.js` (`rest: 90`).
+
 ## Bestanden
 
 | Bestand | Wat |
 |---|---|
 | `index.html` | De pagina |
 | `style.css` | Alle opmaak (mobile first) |
-| `data.js` | **Het schema.** Oefeningen, sets, reps en spiergroepen |
+| `i18n.js` | Alle teksten in het Nederlands en Engels |
+| `data.js` | **Het schema.** Oefeningen, sets, reps, rusttijden en spiergroepen |
 | `store.js` | Opslag van je gewichten en vinkjes + rekenwerk |
 | `stats.js` | De Stats-pagina en grafieken |
 | `app.js` | Schema-weergave, navigatie en rusttimer |
@@ -63,7 +70,7 @@ Na één keer openen met internet werkt alles ook zonder bereik, behalve de "Uit
 ## Nieuw schema?
 
 Pas `data.js` aan. Houd de **namen** van oefeningen gelijk als je hun geschiedenis wilt behouden.
-Verhoog daarna in `sw.js` de regel `const VERSION = "v2";` (naar `"v3"` enz.) zodat telefoons de nieuwe versie ophalen.
+Verhoog daarna in `sw.js` de regel `const VERSION = "v3";` (naar `"v4"` enz.) zodat telefoons de nieuwe versie ophalen.
 
 ## Lokaal testen
 

@@ -1,6 +1,6 @@
 /* =========================================================
-   Cas RC Trainingsweek — schema-weergave, navigatie en rusttimer
-   Schema: data.js · Opslag/rekenwerk: store.js · Stats: stats.js
+   Cas RC Trainingsweek — schema-weergave, navigatie, taal en rusttimer
+   Teksten: i18n.js · Schema: data.js · Opslag: store.js · Stats: stats.js
    ========================================================= */
 (function () {
   "use strict";
@@ -15,6 +15,8 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const CHECK = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.5l4.5 4.5L17 5" fill="none" stroke="#1a1500" stroke-width="3"/></svg>';
   const { fmtKg, parseKg } = Store;
+  const fmtRest = (s) => (s >= 120 && s % 60 === 0 ? s / 60 + " min" : s + " sec");
+  const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 
   /* ---------- Melding ---------- */
   const toast = $("toast");
@@ -29,8 +31,24 @@
 
   let warned = false;
   function saved(ok) {
-    if (!ok && !warned) { showToast("Opslaan lukt niet in deze browser (privémodus?). Je gegevens verdwijnen na herladen."); warned = true; }
+    if (!ok && !warned) { showToast(t("saveFail")); warned = true; }
   }
+
+  /* ---------- Vaste teksten in de HTML ---------- */
+  function applyStatic() {
+    document.querySelectorAll("[data-i18n]").forEach((n) => { n.textContent = t(n.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-aria]").forEach((n) => n.setAttribute("aria-label", t(n.dataset.i18nAria)));
+    document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.lang === I18N.lang));
+    document.title = "Cas RC " + t("title").replace(/\u00AD/g, "");
+  }
+
+  document.querySelector(".lang").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-lang]");
+    if (!b || b.dataset.lang === I18N.lang) return;
+    I18N.set(b.dataset.lang);
+    applyStatic();
+    showView();
+  });
 
   /* ---------- Weergave + dag ---------- */
   const todayIdx = (new Date().getDay() + 6) % 7; // maandag = 0
@@ -75,7 +93,7 @@
       const cls = ["day"];
       if (d.rest && !d.active) cls.push("rest");
       if (i === todayIdx) cls.push("today");
-      return `<button type="button" role="tab" class="${cls.join(" ")}" aria-selected="${i === sel}" aria-label="${d.long}: ${d.title}" data-i="${i}"><b>${d.short}</b><span>${d.tag}</span></button>`;
+      return `<button type="button" role="tab" class="${cls.join(" ")}" aria-selected="${i === sel}" aria-label="${esc(L(d.long))}: ${esc(L(d.title))}" data-i="${i}"><b>${esc(L(d.short))}</b><span>${esc(L(d.tag))}</span></button>`;
     }).join("");
   }
 
@@ -90,35 +108,47 @@
   });
 
   /* ---------- Vergelijking met vorige keer ---------- */
-  /** tekst + klasse voor de regel onder een kg-vakje */
   function compareHtml(id, date, si, kg) {
     const prev = Store.prevSession(id, date);
     const pkg = prev ? (prev.kg[si] != null ? prev.kg[si] : Math.max(0, ...prev.kg.filter((v) => v != null))) : null;
     if (kg == null) {
       if (pkg == null || !prev) return "";
-      return `<button type="button" class="fill" data-fill="${pkg}" aria-label="Vul vorige keer in: ${fmtKg(pkg)} kg">vorig <b>${fmtKg(pkg)}</b></button>`;
+      return `<button type="button" class="fill" data-fill="${pkg}" aria-label="${esc(t("ariaFill", { kg: fmtKg(pkg) }))}">${t("prev")} <b>${fmtKg(pkg)}</b></button>`;
     }
     const best = Store.bestBefore(id, date);
     const pr = best > 0 && kg > best;
-    if (pkg == null || !prev) return `<span class="cmp-txt">eerste keer</span>`;
+    if (pkg == null || !prev) return `<span class="cmp-txt">${t("first")}</span>`;
     const diff = Math.round((kg - pkg) * 10) / 10;
     const cls = diff > 0 ? "up" : diff < 0 ? "down" : "";
-    const txt = diff === 0 ? "gelijk" : (diff > 0 ? "+" : "−") + fmtKg(Math.abs(diff));
-    return `<span class="cmp-txt ${cls}">${pr ? '<i class="pr">PR</i>' : ""}${txt}<small> vs ${fmtKg(pkg)}</small></span>`;
+    const txt = diff === 0 ? t("same") : (diff > 0 ? "+" : "−") + fmtKg(Math.abs(diff));
+    return `<span class="cmp-txt ${cls}">${pr ? '<i class="pr">PR</i>' : ""}${txt}<small> ${t("vs")} ${fmtKg(pkg)}</small></span>`;
   }
 
   /* ---------- Dag tekenen ---------- */
-  const footer = () =>
-    `<footer>Schema TeamBuildr · ${SCHEMA_WEEK}<br>Je gegevens staan alleen op dit toestel. Maak af en toe een back-up via Stats.</footer>`;
+  const footer = () => `<footer>${t("footer", { week: esc(L(SCHEMA_WEEK)) })}</footer>`;
+
+  /** code per oefening: A, of P1/P2, B1/B2 als er meer in het blok staan */
+  const codeOf = (b, ei) => (b.ex.length > 1 ? b.letter + (ei + 1) : b.letter);
+
+  /** rusttijd na een set: in een superset alleen na de laatste oefening */
+  const restFor = (b, ei) => (b.superset && ei < b.ex.length - 1 ? 0 : b.rest || 90);
+
+  function blockSub(b) {
+    let s = L(b.sub);
+    if (b.type === "sets" && b.rest) {
+      s += " · " + (b.superset ? t("restAfter", { t: fmtRest(b.rest), code: codeOf(b, b.ex.length - 1) }) : t("restTag", { t: fmtRest(b.rest) }));
+    }
+    return s;
+  }
 
   function renderDay() {
     const d = WEEK[sel];
     const date = Store.dateOfWeekday(sel);
-    const dateTxt = Store.parseYmd(date).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
-    let h = `<div class="dayhead"><div class="kicker">${d.long} ${dateTxt}${sel === todayIdx ? " · vandaag" : ""}</div><h2>${esc(d.title)}</h2>`;
+    const dateTxt = Store.parseYmd(date).toLocaleDateString(I18N.locale, { day: "numeric", month: "short" });
+    let h = `<div class="dayhead"><div class="kicker">${esc(L(d.long))} ${esc(dateTxt)}${sel === todayIdx ? " · " + t("today") : ""}</div><h2>${esc(L(d.title))}</h2>`;
 
     if (d.rest) {
-      h += `</div><div class="restcard"><p>${esc(d.text)}</p><ul>${d.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
+      h += `</div><div class="restcard"><p>${esc(L(d.text))}</p><ul>${d.tips.map((x) => `<li>${esc(L(x))}</li>`).join("")}</ul></div>`;
       main.innerHTML = h + footer();
       return;
     }
@@ -126,36 +156,42 @@
     h += `<div class="progress"><div class="bar"><i id="pbar"></i></div><span id="ptext"></span></div></div>`;
 
     d.blocks.forEach((b) => {
-      h += `<section class="section"><div class="sechead"><div class="letter" aria-hidden="true">${b.letter}</div><div class="secname"><strong>${esc(b.name)}</strong><small>${esc(b.sub)}</small></div></div>`;
+      h += `<section class="section"><div class="sechead"><div class="letter" aria-hidden="true">${b.letter}</div><div class="secname"><strong>${esc(L(b.name))}</strong><small>${esc(blockSub(b))}</small></div></div>`;
 
       if (b.type === "list") {
-        if (b.intro) h += `<p class="intro">${esc(b.intro)}</p>`;
+        if (b.intro) h += `<p class="intro">${esc(L(b.intro))}</p>`;
         h += `<div class="list">` + b.items.map((it) => {
           const id = Store.idFor(b, it);
           const on = Store.isDone(id, date, 0);
+          const name = it[0];
           let logRow = "";
           if (it[4]) {
             const kg = Store.getKg(id, date, 0);
             logRow = `<div class="it-log" data-id="${id}" data-si="0" data-reps="">
-              <input id="kg-${id}-${date}" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="kg" value="${kg != null ? fmtKg(kg) : ""}" aria-label="Zwaarste set ${esc(it[0])} in kg">
+              <input id="kg-${id}-${date}" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="kg" value="${kg != null ? fmtKg(kg) : ""}" aria-label="${esc(t("ariaTop", { name }))}">
               <span class="cmp">${compareHtml(id, date, 0, kg)}</span></div>`;
           }
+          const dose = L(it[1]);
           return `<div class="item${on ? " done" : ""}" data-id="${id}" data-si="0">
-            <button type="button" class="tick" aria-pressed="${on}" aria-label="${esc(it[0])} afvinken">${CHECK}</button>
-            <div class="it-name">${esc(it[0])}${it[1] ? `<span class="it-dose">${esc(it[1])}</span>` : ""}${logRow}</div>
-            <a class="how" href="${yt(it[2])}" target="_blank" rel="noopener">Uitleg</a>
+            <button type="button" class="tick" aria-pressed="${on}" aria-label="${esc(t("ariaTick", { name }))}">${CHECK}</button>
+            <div class="it-name">${esc(name)}${dose ? `<span class="it-dose">${esc(dose)}</span>` : ""}${logRow}</div>
+            <a class="how" href="${yt(it[2])}" target="_blank" rel="noopener">${t("howto")}</a>
           </div>`;
         }).join("") + `</div>`;
       } else {
-        b.ex.forEach((ex) => {
+        b.ex.forEach((ex, ei) => {
           const id = Store.idFor(b, ex);
-          h += `<div class="ex"><div class="extop"><div class="exname"><h3>${esc(ex[0])}</h3>${ex[2] ? `<p class="note">${esc(ex[2])}</p>` : ""}</div><a class="how" href="${yt(ex[3])}" target="_blank" rel="noopener">Uitleg</a></div><div class="sets">`;
+          const code = codeOf(b, ei);
+          const note = L(ex[2]);
+          h += `<div class="ex"><div class="extop"><div class="exname"><h3>${b.ex.length > 1 ? `<span class="code">${code}</span>` : ""}${esc(ex[0])}</h3>${note ? `<p class="note">${esc(note)}</p>` : ""}</div><a class="how" href="${yt(ex[3])}" target="_blank" rel="noopener">${t("howto")}</a></div><div class="sets">`;
+          const rest = restFor(b, ei);
+          const next = rest === 0 ? codeOf(b, ei + 1) : "";
           ex[1].forEach((r, si) => {
             const on = Store.isDone(id, date, si);
             const kg = Store.getKg(id, date, si);
-            h += `<div class="set${on ? " done" : ""}" data-id="${id}" data-si="${si}" data-reps="${r}">
-              <button type="button" class="set-btn" aria-pressed="${on}" aria-label="Set ${si + 1} van ${esc(ex[0])}: ${r}"><span class="sl">Set ${si + 1}</span><span class="rp">${r}</span></button>
-              <input id="kg-${id}-${si}-${date}" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="kg" value="${kg != null ? fmtKg(kg) : ""}" aria-label="Gewicht set ${si + 1} ${esc(ex[0])}">
+            h += `<div class="set${on ? " done" : ""}" data-id="${id}" data-si="${si}" data-reps="${r}" data-rest="${rest}" data-next="${next}">
+              <button type="button" class="set-btn" aria-pressed="${on}" aria-label="${esc(t("ariaSet", { n: si + 1, name: ex[0], reps: r }))}"><span class="sl">${t("set")} ${si + 1}</span><span class="rp">${r}</span></button>
+              <input id="kg-${id}-${si}-${date}" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="kg" value="${kg != null ? fmtKg(kg) : ""}" aria-label="${esc(t("ariaKg", { n: si + 1, name: ex[0] }))}">
               <span class="cmp">${compareHtml(id, date, si, kg)}</span>
             </div>`;
           });
@@ -165,7 +201,7 @@
       h += `</section>`;
     });
 
-    h += `<button type="button" class="reset" id="reset">Wis vinkjes van ${d.long.toLowerCase()}</button>`;
+    h += `<button type="button" class="reset" id="reset">${esc(t("clearDay", { day: L(d.long).toLowerCase() }))}</button>`;
     main.innerHTML = h + footer();
     updateProgress();
   }
@@ -187,9 +223,10 @@
     const repsRaw = box.dataset.reps;
     const reps = repsRaw === "" ? null : (isNaN(+repsRaw) ? repsRaw : +repsRaw);
     const date = Store.dateOfWeekday(sel);
-    const kg = input.value.trim() === "" ? null : parseKg(input.value);
-    input.classList.toggle("bad", input.value.trim() !== "" && kg == null);
-    if (input.value.trim() !== "" && kg == null) return;
+    const raw = input.value.trim();
+    const kg = raw === "" ? null : parseKg(raw);
+    input.classList.toggle("bad", raw !== "" && kg == null);
+    if (raw !== "" && kg == null) return;
     saved(Store.setKg(id, date, si, kg, reps));
     box.querySelector(".cmp").innerHTML = compareHtml(id, date, si, kg);
   }
@@ -206,6 +243,7 @@
     const btn = e.target.closest(".set-btn, .tick");
     if (btn) {
       unlockAudio();
+      keepAwake();
       const box = btn.closest("[data-id]");
       const id = box.dataset.id, si = +box.dataset.si;
       const date = Store.dateOfWeekday(sel);
@@ -214,22 +252,27 @@
       box.classList.toggle("done", on);
       btn.setAttribute("aria-pressed", on);
       updateProgress();
-      if (on && box.classList.contains("set")) startTimer(90);
+      if (on) buzz(15);
+      if (on && box.classList.contains("set")) {
+        const rest = +box.dataset.rest;
+        if (rest > 0) startTimer(rest);
+        else if (box.dataset.next) showNext(box.dataset.next);
+      }
       return;
     }
 
     const r = e.target.closest("#reset");
     if (r) {
-      const label = "Wis vinkjes van " + WEEK[sel].long.toLowerCase();
+      const dayName = L(WEEK[sel].long).toLowerCase();
       if (!r.classList.contains("arm")) {
         r.classList.add("arm");
-        r.textContent = "Tik nog een keer. Gewichten blijven bewaard";
-        setTimeout(() => { if (r.isConnected) { r.classList.remove("arm"); r.textContent = label; } }, 3500);
+        r.textContent = t("clearConfirm");
+        setTimeout(() => { if (r.isConnected) { r.classList.remove("arm"); r.textContent = t("clearDay", { day: dayName }); } }, 3500);
         return;
       }
       saved(Store.clearDone(Store.dateOfWeekday(sel)));
       renderDay();
-      showToast("Vinkjes van " + WEEK[sel].long.toLowerCase() + " gewist.");
+      showToast(t("cleared", { day: dayName }));
     }
   });
 
@@ -239,6 +282,7 @@
   /* ---------- Rusttimer ---------- */
   const timerEl = $("timer");
   const clock = $("clock");
+  const tlabel = $("tlabel");
   let end = 0, tick = null, wake = null, audio = null;
 
   const fmt = (s) => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
@@ -254,29 +298,39 @@
   function beep() {
     try {
       if (audio) {
-        [0, 0.25, 0.5].forEach((t) => {
+        [0, 0.25, 0.5].forEach((s) => {
           const o = audio.createOscillator();
           const g = audio.createGain();
           o.frequency.value = 880;
-          g.gain.value = 0.25;
+          g.gain.value = 0.3;
           o.connect(g).connect(audio.destination);
-          o.start(audio.currentTime + t);
-          o.stop(audio.currentTime + t + 0.15);
+          o.start(audio.currentTime + s);
+          o.stop(audio.currentTime + s + 0.15);
         });
       }
     } catch (e) {}
-    try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {}
+    buzz([200, 100, 200]);
   }
 
+  // Scherm aan houden tijdens de training (waar de telefoon dat toestaat)
   async function keepAwake() {
-    try { if ("wakeLock" in navigator && !wake) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => (wake = null)); } } catch (e) {}
+    try { if ("wakeLock" in navigator && !wake && document.visibilityState === "visible") { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => (wake = null)); } } catch (e) {}
+  }
+
+  function showNext(code) {
+    clearInterval(tick); tick = null;
+    timerEl.classList.remove("running", "finished");
+    timerEl.classList.add("next");
+    tlabel.textContent = t("nextUp", { code });
+    clock.textContent = code;
   }
 
   function startTimer(s) {
     unlockAudio();
     end = Date.now() + s * 1000;
+    timerEl.classList.remove("finished", "next");
     timerEl.classList.add("running");
-    timerEl.classList.remove("finished");
+    tlabel.textContent = t("rest");
     clearInterval(tick);
     tick = setInterval(run, 250);
     run();
@@ -292,7 +346,8 @@
   function stopTimer(finished) {
     clearInterval(tick);
     tick = null;
-    timerEl.classList.remove("running");
+    timerEl.classList.remove("running", "next");
+    tlabel.textContent = t("rest");
     if (finished) { timerEl.classList.add("finished"); beep(); }
     else { timerEl.classList.remove("finished"); clock.textContent = "0:00"; }
   }
@@ -304,10 +359,11 @@
   });
 
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && tick) { run(); keepAwake(); }
+    if (document.visibilityState === "visible") { if (tick) run(); if (tick || main.querySelector(".done")) keepAwake(); }
   });
 
   /* ---------- Start ---------- */
+  applyStatic();
   readHash();
   showView();
 

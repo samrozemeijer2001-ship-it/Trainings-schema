@@ -12,7 +12,7 @@ const Stats = (function () {
 
   const S = Store;
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const fmt1 = (n) => (Math.round(n * 10) / 10).toString().replace(".", ",");
+  const fmt1 = (n) => S.fmtKg(n);
   const pct = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(Math.round(n)) + "%";
   const NS = "http://www.w3.org/2000/svg";
   const WEEKS = 8;
@@ -94,7 +94,7 @@ const Stats = (function () {
       const main = allIds.filter((id) => S.catalog[id] && S.catalog[id].groups[0] === g);
       const gains = ids.map((id) => lifted(id)).filter((l) => l.length >= 2).map((l) => (Math.max(...l.map((s) => s.str)) / l[0].str - 1) * 100);
       const setsIn = (w) => main.reduce((n, id) => n + sessions[id].filter((s) => weekOf(s.date) === w).reduce((m, s) => m + s.sets, 0), 0);
-      return { g, name: GROUPS[g], gain: gains.length ? gains.reduce((a, b) => a + b, 0) / gains.length : null, n: gains.length, cur: setsIn(curW), prev: setsIn(prevW) };
+      return { g, name: L(GROUPS[g]), gain: gains.length ? gains.reduce((a, b) => a + b, 0) / gains.length : null, n: gains.length, cur: setsIn(curW), prev: setsIn(prevW) };
     });
 
     // aanwezigheid
@@ -152,7 +152,7 @@ const Stats = (function () {
       const W = Math.max(260, holder.clientWidth), H = 190;
       const P = { l: 40, r: 14, t: 14, b: 28 };
       const vals = pts.map((p) => p.v).filter((v) => v != null);
-      if (!vals.length) { holder.innerHTML = `<p class="nodata">Nog geen gegevens.</p>`; readout.textContent = ""; return; }
+      if (!vals.length) { holder.innerHTML = `<p class="nodata">${t("noData")}</p>`; readout.textContent = ""; return; }
       let lo = Math.min(...vals), hi = Math.max(...vals);
       if (opts.ref != null) { lo = Math.min(lo, opts.ref); hi = Math.max(hi, opts.ref); }
       const pad = (hi - lo) * 0.12 || Math.max(1, hi * 0.05);
@@ -174,7 +174,10 @@ const Stats = (function () {
       }
       const every = Math.max(1, Math.ceil(pts.length / Math.floor(pw / 38)));
       pts.forEach((p, i) => {
-        if ((pts.length - 1 - i) % every === 0) el("text", { x: X(i), y: H - 8, class: "ax", "text-anchor": "middle" }, svg).textContent = p.label;
+        if ((pts.length - 1 - i) % every === 0) {
+          const anchor = pts.length > 1 && i === pts.length - 1 ? "end" : pts.length > 1 && i === 0 ? "start" : "middle";
+          el("text", { x: X(i) + (anchor === "end" ? 4 : anchor === "start" ? -4 : 0), y: H - 8, class: "ax", "text-anchor": anchor }, svg).textContent = p.label;
+        }
       });
 
       // lijn + vlak (onderbroken bij ontbrekende waarden)
@@ -267,7 +270,7 @@ const Stats = (function () {
     </section>`;
 
   const wLabel = (w) => "W" + S.isoWeek(S.parseYmd(w));
-  const dLabel = (d) => S.parseYmd(d).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+  const dLabel = (d) => S.parseYmd(d).toLocaleDateString(I18N.locale, { day: "numeric", month: "short" });
 
   /* =======================================================
      Pagina
@@ -281,9 +284,9 @@ const Stats = (function () {
     if (!D.hasData) {
       container.innerHTML = `
         <div class="empty">
-          <h2>Nog geen stats</h2>
-          <p>Vul tijdens het trainen je kg in bij elke set. Na een paar trainingen zie je hier je krachtgroei, volume per week, spiergroepen en verloop per oefening.</p>
-          <button type="button" class="btn-main" data-act="demo">Bekijk met voorbeelddata</button>
+          <h2>${t("emptyTitle")}</h2>
+          <p>${t("emptyText")}</p>
+          <button type="button" class="btn-main" data-act="demo">${t("demoBtn")}</button>
         </div>
         ${dataTools()}`;
       return;
@@ -297,37 +300,37 @@ const Stats = (function () {
     const planned = S.plannedPerDay.filter((n) => n > 0).length;
 
     let h = "";
-    if (demo) h += `<div class="demo-bar"><p><b>Voorbeelddata.</b> Dit zijn niet jouw cijfers.</p><button type="button" data-act="mine">Terug naar mijn data</button></div>`;
+    if (demo) h += `<div class="demo-bar"><p>${t("demoBar")}</p><button type="button" data-act="mine">${t("backMine")}</button></div>`;
 
-    h += `<div class="dayhead"><div class="kicker">Laatste ${WEEKS} weken</div><h2>Progressie</h2></div>
+    h += `<div class="dayhead"><div class="kicker">${t("lastWeeks", { n: WEEKS })}</div><h2>${t("progress")}</h2></div>
       <div class="tiles">
-        <div class="tile"><span class="t-lab">Kracht</span><b class="t-num">${idx != null ? pct(idx - 100) : "–"}</b><span class="t-sub">sinds je start</span></div>
-        <div class="tile"><span class="t-lab">Volume</span><b class="t-num">${fmt1(D.vNow.v / 1000)}<small> t</small></b><span class="t-sub">${volDiff != null ? pct(volDiff) + " vs zelfde punt vorige week" : "deze week"}</span></div>
-        <div class="tile"><span class="t-lab">Trainingen</span><b class="t-num">${D.vNow.trainings}<small>/${planned}</small></b><span class="t-sub">deze week</span></div>
-        <div class="tile"><span class="t-lab">PR's</span><b class="t-num">${D.prs}</b><span class="t-sub">laatste 30 dagen</span></div>
+        <div class="tile"><span class="t-lab">${t("strength")}</span><b class="t-num">${idx != null ? pct(idx - 100) : "–"}</b><span class="t-sub">${t("sinceStart")}</span></div>
+        <div class="tile"><span class="t-lab">${t("volume")}</span><b class="t-num">${fmt1(D.vNow.v / 1000)}<small> t</small></b><span class="t-sub">${volDiff != null ? t("vsSamePoint", { p: pct(volDiff) }) : t("thisWeek")}</span></div>
+        <div class="tile"><span class="t-lab">${t("sessions")}</span><b class="t-num">${D.vNow.trainings}<small>/${planned}</small></b><span class="t-sub">${t("thisWeek")}</span></div>
+        <div class="tile"><span class="t-lab">${t("prs")}</span><b class="t-num">${D.prs}</b><span class="t-sub">${t("last30")}</span></div>
       </div>`;
 
-    h += chartBox("c-strength", "Algemene kracht", "Gemiddelde van al je oefeningen. Per oefening vergelijken we je beste geschatte 1RM met je eerste keer. 100 = start.");
-    h += chartBox("c-volume", "Volume per week", "Totaal kg × reps van alle sets met gewicht.");
+    h += chartBox("c-strength", t("overall"), t("overallSub"));
+    h += chartBox("c-volume", t("volTitle"), t("volSub"));
 
     // spiergroepen
     const gg = D.groups.filter((g) => g.gain != null);
     const gmax = Math.max(5, ...gg.map((g) => Math.abs(g.gain)));
     const smax = Math.max(1, ...D.groups.map((g) => Math.max(g.cur, g.prev)));
-    h += `<section class="st"><div class="st-head"><h3>Per spiergroep</h3><p>Krachtgroei sinds je eerste keer, gemiddeld over de oefeningen voor die spiergroep.</p></div>
+    h += `<section class="st"><div class="st-head"><h3>${t("perGroup")}</h3><p>${t("groupSub")}</p></div>
       <div class="hbars">${gg.length ? gg.sort((a, b) => b.gain - a.gain).map((g) => `
-        <div class="hb"><span class="hb-name">${g.name}</span><span class="hb-track"><i class="${g.gain < 0 ? "neg" : ""}" style="width:${(Math.abs(g.gain) / gmax) * 100}%"></i></span><span class="hb-val">${pct(g.gain)}</span></div>`).join("")
-        : `<p class="nodata">Na twee trainingen met gewicht per oefening verschijnt hier je groei.</p>`}</div>
-      <div class="st-head sub"><h4>Sets deze week</h4><p><span class="key cur"></span>deze week <span class="key prev"></span>vorige week</p></div>
+        <div class="hb"><span class="hb-name">${esc(g.name)}</span><span class="hb-track"><i class="${g.gain < 0 ? "neg" : ""}" style="width:${(Math.abs(g.gain) / gmax) * 100}%"></i></span><span class="hb-val">${pct(g.gain)}</span></div>`).join("")
+        : `<p class="nodata">${t("groupEmpty")}</p>`}</div>
+      <div class="st-head sub"><h4>${t("setsThisWeek")}</h4><p><span class="key cur"></span>${t("thisWeek")} <span class="key prev"></span>${t("lastWeek")}</p></div>
       <div class="hbars">${D.groups.filter((g) => g.cur || g.prev).map((g) => `
-        <div class="hb"><span class="hb-name">${g.name}</span><span class="hb-track"><i style="width:${(g.cur / smax) * 100}%"></i><em style="left:${(g.prev / smax) * 100}%" title="vorige week ${g.prev}"></em></span><span class="hb-val">${g.cur}<small> / ${g.prev}</small></span></div>`).join("") || `<p class="nodata">Nog geen sets deze of vorige week.</p>`}</div>
+        <div class="hb"><span class="hb-name">${esc(g.name)}</span><span class="hb-track"><i style="width:${(g.cur / smax) * 100}%"></i><em style="left:${(g.prev / smax) * 100}%"></em></span><span class="hb-val">${g.cur}<small> / ${g.prev}</small></span></div>`).join("") || `<p class="nodata">${t("noSets")}</p>`}</div>
     </section>`;
 
     // aanwezigheid
-    const dnames = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
-    h += `<section class="st"><div class="st-head"><h3>Aanwezigheid</h3><p>Hoe voller het vakje, hoe meer van de training je hebt afgetikt.</p></div>
-      <div class="heat" role="table" aria-label="Aanwezigheid per dag">
-        <span class="hh" role="columnheader"></span>${dnames.map((n) => `<span class="hh" role="columnheader">${n}</span>`).join("")}
+    const dnames = WEEK.map((d) => L(d.short));
+    h += `<section class="st"><div class="st-head"><h3>${t("attendance")}</h3><p>${t("attSub")}</p></div>
+      <div class="heat" role="table" aria-label="${t("attendance")}">
+        <span class="hh" role="columnheader"></span>${dnames.map((n) => `<span class="hh" role="columnheader">${esc(n)}</span>`).join("")}
         ${D.weeks.map((w) => {
           return `<span class="hw" role="rowheader">${wLabel(w)}</span>` + dnames.map((n, i) => {
             const d = S.ymd(S.addDays(S.parseYmd(w), i));
@@ -336,18 +339,18 @@ const Stats = (function () {
             const ratio = a ? (plan ? Math.min(1, a / plan) : 1) : 0;
             const lvl = ratio === 0 ? 0 : ratio < 0.34 ? 1 : ratio < 0.67 ? 2 : ratio < 0.95 ? 3 : 4;
             const future = d > D.today;
-            return `<span class="hc l${lvl}${future ? " fut" : ""}${d === D.today ? " now" : ""}" role="cell" title="${dLabel(d)}: ${a} afgetikt"></span>`;
+            return `<span class="hc l${lvl}${future ? " fut" : ""}${d === D.today ? " now" : ""}" role="cell" title="${esc(t("attCell", { d: dLabel(d), n: a }))}"></span>`;
           }).join("");
         }).join("")}
       </div>
-      <p class="legend-heat"><span class="hc l0"></span>niets <span class="hc l2"></span>deels <span class="hc l4"></span>alles</p>
+      <p class="legend-heat"><span class="hc l0"></span>${t("none")} <span class="hc l2"></span>${t("partly")} <span class="hc l4"></span>${t("all")}</p>
     </section>`;
 
     // per oefening
     if (selEx) {
       const opts = WEEK.filter((d) => d.blocks).map((d) => {
         const ids = [...new Set(exIds.filter((id) => S.catalog[id].days[0] === WEEK.indexOf(d)))];
-        return ids.length ? `<optgroup label="${d.long}">${ids.map((id) => `<option value="${id}"${id === selEx ? " selected" : ""}>${esc(S.catalog[id].name)}</option>`).join("")}</optgroup>` : "";
+        return ids.length ? `<optgroup label="${esc(L(d.long))}">${ids.map((id) => `<option value="${id}"${id === selEx ? " selected" : ""}>${esc(S.catalog[id].name)}</option>`).join("")}</optgroup>` : "";
       }).join("");
       const ses = D.sessions[selEx].filter((s) => s.top > 0);
       const cat = S.catalog[selEx];
@@ -355,18 +358,18 @@ const Stats = (function () {
       const first = ses[0], last = ses[ses.length - 1];
       const best = Math.max(...ses.map((s) => s.top));
       const bestStr = Math.max(...ses.map((s) => s.str));
-      h += `<section class="st"><div class="st-head"><h3>Per oefening</h3></div>
-        <label class="pick" for="ex-pick"><span>Oefening</span>
+      h += `<section class="st"><div class="st-head"><h3>${t("perEx")}</h3></div>
+        <label class="pick" for="ex-pick"><span>${t("exercise")}</span>
           <select id="ex-pick">${opts}</select>
         </label>
         <div class="tiles three">
-          <div class="tile"><span class="t-lab">Zwaarste</span><b class="t-num">${fmt1(best)}<small> kg</small></b></div>
-          <div class="tile"><span class="t-lab">${timed ? "Laatste" : "Geschat 1RM"}</span><b class="t-num">${fmt1(timed ? last.top : bestStr)}<small> kg</small></b></div>
-          <div class="tile"><span class="t-lab">Sinds start</span><b class="t-num">${ses.length > 1 ? pct((last.str / first.str - 1) * 100) : "–"}</b></div>
+          <div class="tile"><span class="t-lab">${t("heaviest")}</span><b class="t-num">${fmt1(best)}<small> kg</small></b></div>
+          <div class="tile"><span class="t-lab">${timed ? t("latest") : t("e1rm")}</span><b class="t-num">${fmt1(timed ? last.top : bestStr)}<small> kg</small></b></div>
+          <div class="tile"><span class="t-lab">${t("sinceStart")}</span><b class="t-num">${ses.length > 1 ? pct((last.str / first.str - 1) * 100) : "–"}</b></div>
         </div>
         <div id="c-ex"><p class="readout" aria-live="polite"></p><div class="plot"></div></div>
         <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>Datum</th><th>Sets (kg)</th><th class="num">${timed ? "Top" : "1RM"}</th></tr></thead>
+          <thead><tr><th>${t("date")}</th><th>${t("setsKg")}</th><th class="num">${timed ? t("top") : t("oneRm")}</th></tr></thead>
           <tbody>${ses.slice(-8).reverse().map((s) => `<tr><td>${dLabel(s.date)}</td><td>${s.kg.filter((v) => v != null).map(fmt1).join(" · ")}</td><td class="num">${fmt1(timed ? s.top : s.str)}${s.top === best ? ' <i class="pr">PR</i>' : ""}</td></tr>`).join("")}</tbody>
         </table></div>
       </section>`;
@@ -377,27 +380,27 @@ const Stats = (function () {
 
     // grafieken tekenen
     lineChart(container.querySelector("#c-strength"),
-      D.strengthWeeks.map((p) => ({ label: wLabel(p.w), v: p.v, tip: p.v != null ? `<b>${wLabel(p.w)}</b> index ${fmt1(p.v)} <span>(${pct(p.v - 100)})</span>` : `<b>${wLabel(p.w)}</b> nog geen data` })),
-      { ref: 100, refLabel: "start", yFmt: (v) => Math.round(v), label: "Krachtindex per week" });
+      D.strengthWeeks.map((p) => ({ label: wLabel(p.w), v: p.v, tip: p.v != null ? `<b>${wLabel(p.w)}</b> ${t("index")} ${fmt1(p.v)} <span>(${pct(p.v - 100)})</span>` : `<b>${wLabel(p.w)}</b> ${t("noDataWeek")}` })),
+      { ref: 100, refLabel: t("start"), yFmt: (v) => Math.round(v), label: t("chartStrength") });
 
     barChart(container.querySelector("#c-volume"),
-      D.volWeeks.map((p) => ({ label: wLabel(p.w), v: p.v / 1000, tip: `<b>${wLabel(p.w)}</b> ${fmt1(p.v / 1000)} t · ${p.trainings} training${p.trainings === 1 ? "" : "en"}` })),
-      { yFmt: (v) => fmt1(v), label: "Volume per week in ton" });
+      D.volWeeks.map((p) => ({ label: wLabel(p.w), v: p.v / 1000, tip: `<b>${wLabel(p.w)}</b> ${fmt1(p.v / 1000)} t · ${p.trainings} ${p.trainings === 1 ? t("session1") : t("sessionN")}` })),
+      { yFmt: (v) => fmt1(v), label: t("chartVolume") });
 
     if (selEx) {
       const ses = D.sessions[selEx].filter((s) => s.top > 0);
       const timed = !S.catalog[selEx].reps.some((r) => S.numReps(r));
       lineChart(container.querySelector("#c-ex"),
-        ses.map((s) => ({ label: dLabel(s.date).replace(".", ""), v: timed ? s.top : s.str, tip: `<b>${dLabel(s.date)}</b> ${timed ? "top" : "1RM"} ${fmt1(timed ? s.top : s.str)} kg <span>· sets ${s.kg.filter((v) => v != null).map(fmt1).join(" · ")}</span>` })),
+        ses.map((s) => ({ label: dLabel(s.date).replace(".", ""), v: timed ? s.top : s.str, tip: `<b>${dLabel(s.date)}</b> ${timed ? t("top") : t("oneRm")} ${fmt1(timed ? s.top : s.str)} kg <span>· ${t("set").toLowerCase()}s ${s.kg.filter((v) => v != null).map(fmt1).join(" · ")}</span>` })),
         { yFmt: (v) => fmt1(v), label: S.catalog[selEx].name });
     }
   }
 
   function dataTools() {
-    return `<section class="st tools"><div class="st-head"><h3>Je gegevens</h3><p>Alles staat alleen op deze telefoon. Een back-up kun je op een nieuwe telefoon weer inladen.</p></div>
+    return `<section class="st tools"><div class="st-head"><h3>${t("dataTitle")}</h3><p>${t("dataSub")}</p></div>
       <div class="tool-row">
-        <button type="button" data-act="export">Back-up opslaan</button>
-        <label class="filebtn" for="import-file">Back-up inladen</label>
+        <button type="button" data-act="export">${t("exportBtn")}</button>
+        <label class="filebtn" for="import-file">${t("importBtn")}</label>
         <input type="file" id="import-file" accept="application/json,.json" hidden>
       </div>
     </section>`;
@@ -468,8 +471,8 @@ const Stats = (function () {
         a.download = "casrc-backup-" + S.ymd(new Date()) + ".json";
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-        window.showToast && showToast("Back-up opgeslagen in je downloads.");
-      } catch (err) { window.showToast && showToast("Back-up maken lukt niet in deze browser."); }
+        window.showToast && showToast(t("exported"));
+      } catch (err) { window.showToast && showToast(t("exportFail")); }
     }
   });
 
@@ -481,8 +484,8 @@ const Stats = (function () {
       if (!f) return;
       const rd = new FileReader();
       rd.onload = () => {
-        try { const n = S.importJson(rd.result); demo = null; render(root); showToast(n + " trainingsregels ingeladen."); }
-        catch (err) { showToast((err && err.message) || "Inladen mislukt. Kies een Cas RC back-up (.json)."); }
+        try { const n = S.importJson(rd.result); demo = null; render(root); showToast(t("imported", { n })); }
+        catch (err) { showToast(err && err.message === "notBackup" ? t("notBackup") : err && err.message === "saveFail" ? t("saveFail") : t("importFail")); }
       };
       rd.readAsText(f);
     }

@@ -75,24 +75,33 @@ button { cursor: pointer; touch-action: manipulation; }
 
 .top { padding-block: 16px 10px; }
 
-.club {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--cas);
-}
+.titlerow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 
 h1 {
+  min-width: 0;
   font-family: var(--display);
   font-weight: 900;
-  font-size: clamp(42px, 13vw, 72px);
+  font-size: clamp(38px, 11.5vw, 64px);
   line-height: .88;
-  margin: 6px 0 0;
+  margin: 0;
   text-transform: uppercase;
-  text-wrap: balance;
   overflow-wrap: break-word;
 }
+
+/* Taalkeuze */
+.lang { flex: none; display: flex; border: 2px solid var(--line); }
+.lang button {
+  min-width: 44px;
+  min-height: 40px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+.lang button + button { border-left: 2px solid var(--line); }
+.lang button[aria-pressed="true"] { background: var(--cas); color: var(--cas-ink); }
 
 /* ---------- Dagstrook ---------- */
 .days {
@@ -213,6 +222,20 @@ h1 {
 .extop { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
 .exname { min-width: 0; }
 .exname h3 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.code {
+  display: inline-block;
+  min-width: 2.1em;
+  margin-right: 8px;
+  padding: 2px 4px;
+  border: 2px solid var(--cas);
+  color: var(--cas);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  vertical-align: 2px;
+}
 .note { margin: 3px 0 0; font-size: 15px; color: var(--muted); }
 
 .how {
@@ -386,9 +409,9 @@ footer {
   flex: 1;
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
-  max-width: 300px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  max-width: 340px;
   margin-left: auto;
 }
 .tbtns button {
@@ -404,7 +427,8 @@ footer {
 }
 .tbtns button:active { background: var(--pitch); color: var(--chalk); }
 .tbtns .stop { background: var(--pitch); color: var(--chalk); }
-.timer.running { background: var(--cas); }
+.timer.running, .timer.next { background: var(--cas); }
+.timer.next .clock { letter-spacing: .02em; }
 .timer.finished .clock { animation: flash .5s steps(2) 6; }
 @keyframes flash { 50% { opacity: .15; } }
 
