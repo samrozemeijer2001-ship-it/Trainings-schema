@@ -2,7 +2,7 @@
    Eigen bestanden: eerst netwerk (zodat updates direct zichtbaar zijn), anders uit cache.
    Lettertypes van Google: uit cache, anders netwerk.
    Verhoog VERSION als je bestanden wijzigt. */
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = "casrc-training-" + VERSION;
 const FONT_CACHE = "casrc-training-fonts";
 
@@ -11,6 +11,8 @@ const ASSETS = [
   "./index.html",
   "./style.css",
   "./data.js",
+  "./store.js",
+  "./stats.js",
   "./app.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
