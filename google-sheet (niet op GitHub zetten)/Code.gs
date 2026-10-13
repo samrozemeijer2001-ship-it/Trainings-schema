@@ -6,6 +6,8 @@
    Tabbladen (worden door setup() aangemaakt):
    - Spelers   : de namen waaruit spelers kiezen. Pas gerust aan.
                  Zet in kolom D "nee" om iemand te verbergen.
+                 Kolom E (E-mail) wordt gevuld bij de eerste inlog.
+   - Sessies   : elk ingelogd apparaat. Regel verwijderen = afmelden.
    - Log       : één regel per set. Wordt bijgewerkt, niet verdubbeld.
    - Overzicht : per speler: laatste training, aantal trainingen,
                  en wie de app nog niet gebruikt.
@@ -24,7 +26,7 @@ const TEAM_CODE = "VERANDER-MIJ";
 const STAFF_CODE = "VERANDER-MIJ-STAF";
 
 const LOG_HEADERS = ["Sleutel", "Bijgewerkt", "Speler ID", "Speler", "Toestel", "Datum", "Training", "Oefening ID", "Oefening", "Set", "Reps", "Kg", "Afgevinkt"];
-const PLAYER_HEADERS = ["ID", "Naam", "Categorie", "Actief"];
+const PLAYER_HEADERS = ["ID", "Naam", "Categorie", "Actief", "E-mail"];
 const OVERVIEW_HEADERS = ["Speler", "Categorie", "Laatste training", "Trainingen totaal", "Laatste 7 dagen", "Laatste 28 dagen", "Sets gelogd", "Status"];
 const PROGRESS_HEADERS = ["Speler ID", "Speler", "Oefening ID", "Oefening", "Sessies",
   "Eerste datum", "Eerste top kg", "Eerste 1RM",
@@ -39,6 +41,13 @@ function setup() {
     const rows = START_SPELERS.map((p) => [p[0], p[1], p[2], "ja"]);
     sp.getRange(2, 1, rows.length, 4).setValues(rows);
   }
+  // kolom E = e-mail (oudere versies gebruikten hem voor een toestelcode: die worden gewist)
+  const e1 = sp.getRange(1, 5).getValues()[0][0];
+  if (e1 !== "E-mail") {
+    if (e1 === "Toestel" && sp.getLastRow() > 1) sp.getRange(2, 5, sp.getLastRow() - 1, 1).clearContent();
+    sp.getRange(1, 5).setValues([["E-mail"]]).setFontWeight("bold");
+  }
+  sheet_(ss, "Sessies", SESSION_HEADERS);
   sheet_(ss, "Log", LOG_HEADERS);
   sheet_(ss, "Overzicht", OVERVIEW_HEADERS);
   sheet_(ss, "Progressie", PROGRESS_HEADERS);
@@ -80,7 +89,6 @@ function doGet(e) {
   }
   if (p.code !== TEAM_CODE) return json_({ ok: false, error: "code" });
   if (p.action === "players") return json_({ ok: true, players: players_() });
-  if (p.action === "mine" && p.player) return json_({ ok: true, rows: mine_(String(p.player)) });
   return json_({ ok: true });
 }
 
@@ -119,23 +127,143 @@ function table_(name) {
 function players_() {
   const sh = SpreadsheetApp.getActive().getSheetByName("Spelers");
   if (!sh || sh.getLastRow() < 2) return [];
-  return sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues()
+  return sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues()
     .filter((r) => r[0] && r[1] && String(r[3]).trim().toLowerCase() !== "nee")
     .map((r) => ({ id: String(r[0]), name: String(r[1]), group: String(r[2] || "") }));
 }
 
-/* ---------------- Schrijven: trainingsregels ---------------- */
+/* ---------------- Inloggen met e-mailcode ----------------
+   1. Speler kiest naam → script mailt een code van 6 cijfers.
+      De eerste keer vult de speler zijn e-mail in; daarna hoort dat
+      adres bij zijn naam (kolom E van Spelers).
+   2. Code klopt → het apparaat krijgt een geheime sleutel en blijft
+      ingelogd. Elk apparaat staat als regel in het tabblad Sessies.
+   3. Insturen en ophalen kan alleen met zo'n sleutel.
+   Apparaat afmelden: verwijder de regel in Sessies.
+   Ander e-mailadres: pas kolom E in Spelers aan (of maak leeg).   */
+const CODE_MINUTES = 10;   // code geldig
+const CODE_TRIES = 5;      // pogingen per code
+const CODE_WAIT_SEC = 60;  // minimaal tussen twee codes
+const SESSION_HEADERS = ["Sleutel (versleuteld)", "Speler ID", "Speler", "E-mail", "Apparaat", "Ingelogd op", "Laatst gebruikt"];
+
+function playerRows_() {
+  const sh = SpreadsheetApp.getActive().getSheetByName("Spelers");
+  const rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues() : [];
+  return { sh: sh, rows: rows };
+}
+
+function hash_(s) {
+  return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s), Utilities.Charset.UTF_8));
+}
+const email_ = (e) => String(e || "").trim().toLowerCase();
+const validEmail_ = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+function mask_(e) { const p = e.split("@"); return p[0].slice(0, 1) + "•••@" + p[1]; }
+
+function requestCode_(player, email) {
+  const P = playerRows_();
+  const idx = P.rows.findIndex((r) => String(r[0]) === player.id);
+  const bound = idx >= 0 ? email_(P.rows[idx][4]) : "";
+  let to = bound;
+  if (!to) {
+    const e = email_(email);
+    if (!e) return { ok: false, error: "needEmail" };
+    if (!validEmail_(e)) return { ok: false, error: "badEmail" };
+    if (P.rows.some((r, i) => i !== idx && email_(r[4]) === e)) return { ok: false, error: "emailUsed" };
+    to = e;
+  }
+  const props = PropertiesService.getScriptProperties();
+  const key = "otp:" + player.id;
+  const prev = JSON.parse(props.getProperty(key) || "null");
+  const now = Date.now();
+  if (prev && prev.email === to && now - prev.sent < CODE_WAIT_SEC * 1000) return { ok: true, masked: mask_(to), isNew: !bound, resent: false };
+  const code = String(parseInt(Utilities.getUuid().replace(/-/g, "").slice(0, 12), 16) % 1000000).padStart(6, "0");
+  props.setProperty(key, JSON.stringify({ h: hash_(player.id + "|" + code), email: to, exp: now + CODE_MINUTES * 60000, tries: 0, sent: now }));
+  const name = idx >= 0 ? String(P.rows[idx][1]) : player.name;
+  MailApp.sendEmail({
+    to: to, name: "Cas RC Training",
+    subject: code + " is je inlogcode voor Cas RC Training",
+    body: "Hoi " + name.split(" ")[0] + ",\n\nJe inlogcode is: " + code + "\n\nDeze code is " + CODE_MINUTES + " minuten geldig. Heb je dit niet aangevraagd? Dan kun je deze mail negeren.\n\nCas RC Training",
+    htmlBody: '<div style="font-family:Arial,sans-serif;max-width:420px">' +
+      '<p>Hoi ' + name.split(" ")[0] + ',</p><p>Je inlogcode voor Cas RC Training:</p>' +
+      '<p style="font-size:34px;font-weight:bold;letter-spacing:6px;background:#0d0d0b;color:#f5c518;padding:14px 18px;display:inline-block">' + code + '</p>' +
+      '<p style="color:#555">Deze code is ' + CODE_MINUTES + ' minuten geldig. Heb je dit niet aangevraagd? Dan kun je deze mail negeren.</p></div>'
+  });
+  return { ok: true, masked: mask_(to), isNew: !bound, resent: true };
+}
+
+function verify_(player, otp, deviceName) {
+  const props = PropertiesService.getScriptProperties();
+  const key = "otp:" + player.id;
+  const st = JSON.parse(props.getProperty(key) || "null");
+  if (!st) return { ok: false, error: "noCode" };
+  if (Date.now() > st.exp) { props.deleteProperty(key); return { ok: false, error: "expired" }; }
+  if (st.tries >= CODE_TRIES) { props.deleteProperty(key); return { ok: false, error: "tooMany" }; }
+  if (hash_(player.id + "|" + String(otp || "").replace(/\D/g, "")) !== st.h) {
+    st.tries++;
+    if (st.tries >= CODE_TRIES) props.deleteProperty(key); else props.setProperty(key, JSON.stringify(st));
+    return { ok: false, error: st.tries >= CODE_TRIES ? "tooMany" : "wrong", left: CODE_TRIES - st.tries };
+  }
+  props.deleteProperty(key);
+
+  // e-mail aan de naam koppelen (eerste keer) en de officiële naam gebruiken
+  const P = playerRows_();
+  const sh = P.sh || sheet_(SpreadsheetApp.getActive(), "Spelers", PLAYER_HEADERS);
+  const idx = P.rows.findIndex((r) => String(r[0]) === player.id);
+  let name = player.name;
+  if (idx >= 0) {
+    name = String(P.rows[idx][1]);
+    if (!email_(P.rows[idx][4])) sh.getRange(idx + 2, 5).setValues([[st.email]]);
+  } else {
+    sh.getRange(P.rows.length + 2, 1, 1, 5).setValues([[player.id, player.name, "niet in lijst", "ja", st.email]]);
+  }
+
+  const token = Utilities.getUuid() + Utilities.getUuid();
+  const ses = SpreadsheetApp.getActive().getSheetByName("Sessies") || sheet_(SpreadsheetApp.getActive(), "Sessies", SESSION_HEADERS);
+  const now = new Date();
+  ses.getRange(ses.getLastRow() + 1, 1, 1, SESSION_HEADERS.length).setValues([[hash_(token), player.id, name, st.email, String(deviceName || "").slice(0, 60), now, now]]);
+  return { ok: true, token: token, player: { id: player.id, name: name } };
+}
+
+/** sleutel → speler (of null). Werkt "laatst gebruikt" hooguit eens per 6 uur bij. */
+function session_(token) {
+  if (!token) return null;
+  const sh = SpreadsheetApp.getActive().getSheetByName("Sessies");
+  if (!sh || sh.getLastRow() < 2) return null;
+  const h = hash_(token);
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, SESSION_HEADERS.length).getValues();
+  const i = rows.findIndex((r) => r[0] === h);
+  if (i < 0) return null;
+  const last = rows[i][6] instanceof Date ? rows[i][6].getTime() : 0;
+  if (Date.now() - last > 6 * 3600 * 1000) sh.getRange(i + 2, 7).setValues([[new Date()]]);
+  return { id: String(rows[i][1]), name: String(rows[i][2]), row: i + 2, sh: sh };
+}
+
+/* ---------------- Schrijven: inloggen + trainingsregels ---------------- */
 function doPost(e) {
   let body;
   try { body = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: "json" }); }
-  if (!body || body.code !== TEAM_CODE) return json_({ ok: false, error: "code" });
-  const player = body.player || {};
-  if (!player.id || !player.name || !Array.isArray(body.rows)) return json_({ ok: false, error: "data" });
+  if (!body) return json_({ ok: false, error: "json" });
+  const action = String(body.action || "rows");
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    const n = upsert_(player, String(body.device || ""), body.rows.slice(0, 2000));
+    // inloggen: alleen met het teamwachtwoord
+    if (action === "requestCode" || action === "verify") {
+      if (body.code !== TEAM_CODE) return json_({ ok: false, error: "code" });
+      const p = body.player || {};
+      if (!p.id || !p.name) return json_({ ok: false, error: "data" });
+      const player = { id: String(p.id), name: String(p.name) };
+      return json_(action === "requestCode" ? requestCode_(player, body.email) : verify_(player, body.otp, body.deviceName));
+    }
+
+    // alles hierna alleen met een geldige sessie
+    const s = session_(body.token);
+    if (!s) return json_({ ok: false, error: "auth" });
+    if (action === "logout") { s.sh.deleteRow(s.row); return json_({ ok: true }); }
+    if (action === "mine") return json_({ ok: true, rows: mine_(s.id) });
+    if (!Array.isArray(body.rows)) return json_({ ok: false, error: "data" });
+    const n = upsert_({ id: s.id, name: s.name }, String(body.deviceName || "").slice(0, 60), body.rows.slice(0, 2000));
     // Overzicht + Progressie: gebeurt elk kwartier via de trigger (zie setup)
     PropertiesService.getScriptProperties().setProperty("dirty", "1");
     return json_({ ok: true, saved: n });

@@ -27,7 +27,8 @@ Bij volgende updates upload je `config.js` niet meer opnieuw; dan blijft je URL 
 ## C. Testen (±5 min)
 
 1. Open de app-link in een **privévenster** (of op een telefoon die hem nog nooit heeft geopend).
-2. Je krijgt het **wachtwoordscherm** → vul het in → **Wie ben jij?** → kies je naam → **Ja, dat ben ik**.
+2. Je krijgt het **wachtwoordscherm** → vul het in → **Wie ben jij?** → kies je naam → **Stuur mij een code**
+   → vul je e-mail in → vul de code uit je mail in (kijk ook in je spam).
 3. Log een set met gewicht, tik hem af.
 4. Ga naar **Stats → Nu versturen** (of sluit de app). Kijk in de sheet bij **Log**: je regel staat erin.
 5. Wil je Overzicht en Progressie meteen zien? In Apps Script: functie **refreshAll** → **Uitvoeren**.
@@ -40,11 +41,12 @@ Gaat er iets mis? Kijk in Stats bij *Delen met trainers*: daar staat of er nog i
 ## D. Wat je het team vertelt
 
 - **Link + wachtwoord** komen in de groepsapp. Eén keer invullen, daarna nooit meer.
-- **Eén keer je naam kiezen.** Kies je eigen naam; daar hangt al je data aan.
+- **Per apparaat één keer inloggen:** naam kiezen, de eerste keer je e-mail invullen, code uit de mail invullen.
+  Daarna blijf je ingelogd. Alleen jij kunt bij je eigen trainingen.
 - **Op het beginscherm zetten:** iPhone → Deel → Zet op beginscherm. Android → ⋮ → Toevoegen aan startscherm.
 - **Wat er gedeeld wordt:** je trainingen (datum, oefening, sets, reps, kg) gaan naar een sheet die alleen
   de trainers/staf kunnen zien. Wie dat niet wil, kiest "Niet delen, alleen op deze telefoon".
-- **Nieuwe telefoon?** Gewoon opnieuw wachtwoord + naam kiezen: je trainingen komen terug.
+- **Nieuwe telefoon of ook op je laptop?** Gewoon opnieuw inloggen met een code: al je trainingen komen mee.
 - **Feedback:** het is een eerste versie, fouten of wensen graag melden.
 
 ## Als het tijdens de presentatie niet lukt

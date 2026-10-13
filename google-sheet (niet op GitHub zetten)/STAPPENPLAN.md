@@ -17,9 +17,10 @@ zodat je kunt zien wie de app gebruikt en hoe iedereen vooruitgaat.
 
 1. Kies bovenin de functie **setup** in het keuzemenu naast "Uitvoeren" en klik **Uitvoeren**.
 2. Google vraagt om toestemming: kies je account → **Geavanceerd** → **Ga naar (naam project)** → **Toestaan**.
-   Dat is normaal bij een eigen script. Het script vraagt om deze sheet te bewerken en om
-   een tijdschema te maken (elk kwartier Overzicht en Progressie bijwerken).
-3. In je sheet staan nu vier tabbladen: **Spelers**, **Log**, **Overzicht** en **Progressie**.
+   Dat is normaal bij een eigen script. Het script vraagt om deze sheet te bewerken, om
+   een tijdschema te maken (elk kwartier Overzicht en Progressie bijwerken) en om **e-mail te versturen**
+   (de inlogcodes; die gaan vanaf jouw Gmail-adres met als naam "Cas RC Training").
+3. In je sheet staan nu vijf tabbladen: **Spelers**, **Log**, **Overzicht**, **Progressie** en **Sessies**.
    Spelers is gevuld met de 1e jaars senioren, Onder 23 en Senioren uit de ledenlijst.
 
 ## 3. Publiceren als webapp
@@ -46,8 +47,14 @@ Bij latere updates van de app upload je `config.js` **niet** opnieuw, dan blijft
 
 ## 5. Delen in de groepsapp
 
-Stuur de link en het wachtwoord in de groepsapp. Bij de eerste keer openen vult iedere speler het wachtwoord in
-en kiest hij één keer zijn naam. Daarna onthoudt de telefoon beide en wordt alles aan die naam gekoppeld.
+Stuur de link en het wachtwoord in de groepsapp. Per apparaat logt een speler één keer in:
+1. wachtwoord invullen,
+2. zijn naam kiezen,
+3. de allereerste keer zijn e-mailadres invullen (dat wordt aan zijn naam gekoppeld),
+4. de code van 6 cijfers uit de mail invullen (eventueel in de spam kijken).
+
+Daarna blijft dat apparaat ingelogd. Op een tweede apparaat (bijv. laptop) gaat het net zo, maar hoeft hij
+zijn e-mail niet meer in te vullen: de code gaat naar het gekoppelde adres, en al zijn trainingen komen mee.
 
 **Wachtwoord gelekt?** Verander `TEAM_CODE` in het script en publiceer een nieuwe versie (zie "Script aanpassen?").
 Iedereen moet dan het nieuwe wachtwoord invullen; hun naam en trainingen blijven bewaard.
@@ -64,6 +71,15 @@ Iedereen moet dan het nieuwe wachtwoord invullen; hun naam en trainingen blijven
   Filter of sorteer op speler of oefening om te zien hoe iemand vooruitgaat.
 - **Spelers**: de namenlijst die spelers in de app te zien krijgen. Voeg namen toe of zet in kolom D **nee** om iemand te verbergen.
   Wijzig de ID's in kolom A niet meer zodra iemand gekozen heeft.
+  Kolom E (**E-mail**) wordt gevuld bij de eerste inlog. Een e-mailadres hoort bij één speler.
+- **Sessies**: elk ingelogd apparaat (speler, e-mail, soort apparaat, wanneer ingelogd en laatst gebruikt).
+
+**Apparaat afmelden** (bijv. verloren telefoon): verwijder die regel in **Sessies**. Dat apparaat moet dan opnieuw inloggen.
+**Ander e-mailadres** (bijv. typfout): pas kolom E in **Spelers** aan, of maak hem leeg; dan vult de speler bij de volgende inlog een nieuw adres in.
+**Nieuwe telefoon?** Niets nodig: de speler logt gewoon opnieuw in met een code en krijgt al zijn trainingen terug.
+
+**Daglimiet:** Google laat een gewoon Gmail-account via een script ongeveer 100 mails per dag versturen.
+Elke inlog kost één mail; voor een team ruim genoeg.
 
 Spelers die er niet bij staan, kunnen zelf hun naam typen. Die zie je in het overzicht als *niet in lijst*.
 
@@ -74,8 +90,9 @@ Meteen bijwerken? Kies in Apps Script de functie **refreshAll** en klik **Uitvoe
 **Wanneer komt een training binnen?** De app verstuurt gebundeld: na een minuut zonder nieuwe invoer,
 en meteen als een speler de app sluit of wegswipet. Offline wacht het tot er weer internet is.
 
-**Nieuwe of gewiste telefoon?** Als een speler zijn naam (opnieuw) kiest, haalt de app zijn eerdere
-trainingen uit de sheet terug. Ook handmatig: Stats → *Haal mijn trainingen op*.
+**Meerdere apparaten:** na inloggen en bij elke keer openen haalt de app op wat er al in de sheet staat,
+ook wat op een ander apparaat is gelogd. Handmatig: Stats → *Haal mijn trainingen op*.
+Hetzelfde getal tegelijk op twee apparaten aanpassen: wat al op het apparaat stond, blijft staan.
 
 ## Script aanpassen of nieuwe versie plakken?
 
@@ -92,7 +109,7 @@ Kies later een andere code dan het spelerswachtwoord en deel hem alleen met de s
 
 ## Privacy
 
-Je verzamelt nu trainingsgegevens van spelers. Vertel het team wat je bijhoudt, wie het kan zien
+Je verzamelt nu trainingsgegevens en e-mailadressen van spelers. De e-mailadressen worden alleen gebruikt om in te loggen. Vertel het team wat je bijhoudt, wie het kan zien
 (alleen wie toegang heeft tot de sheet) en waarvoor. Deel de sheet alleen met trainers die het nodig hebben.
 Spelers kunnen bij het eerste openen kiezen voor "Niet delen, alleen op deze telefoon".
-Zonder wachtwoord krijgt niemand de namenlijst of trainingsdata te zien. Het trainingsschema zelf staat wel in de openbare app-code op GitHub.
+Zonder wachtwoord krijgt niemand de namenlijst te zien, en zonder inlogcode uit de eigen mailbox kan niemand bij andermans trainingen. Het trainingsschema zelf staat wel in de openbare app-code op GitHub.

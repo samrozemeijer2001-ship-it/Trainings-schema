@@ -2,27 +2,27 @@
    Eigen bestanden: eerst netwerk (zodat updates direct zichtbaar zijn), anders uit cache.
    Lettertypes van Google: uit cache, anders netwerk.
    Verhoog VERSION als je bestanden wijzigt. */
-const VERSION = "v10";
+const VERSION = "v12";
 const CACHE = "casrc-training-" + VERSION;
 const FONT_CACHE = "casrc-training-fonts";
 
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=10",
-  "./i18n.js?v=10",
-  "./data.js?v=10",
-  "./store.js?v=10",
-  "./stats.js?v=10",
-  "./config.js?v=10",
-  "./sync.js?v=10",
-  "./app.js?v=10",
-  "./manifest.webmanifest?v=10",
-  "./icons/logo.svg?v=10",
-  "./icons/icon-192.png?v=10",
-  "./icons/icon-512.png?v=10",
-  "./icons/icon-512-maskable.png?v=10",
-  "./icons/apple-touch-icon.png?v=10"
+  "./style.css?v=12",
+  "./i18n.js?v=12",
+  "./data.js?v=12",
+  "./store.js?v=12",
+  "./stats.js?v=12",
+  "./config.js?v=12",
+  "./sync.js?v=12",
+  "./app.js?v=12",
+  "./manifest.webmanifest?v=12",
+  "./icons/logo.svg?v=12",
+  "./icons/icon-192.png?v=12",
+  "./icons/icon-512.png?v=12",
+  "./icons/icon-512-maskable.png?v=12",
+  "./icons/apple-touch-icon.png?v=12"
 ];
 
 self.addEventListener("install", (e) => {
