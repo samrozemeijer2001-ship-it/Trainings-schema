@@ -6,4 +6,4 @@
    (eindigt op /exec). Leeg laten = de app werkt alleen op
    de telefoon zelf, zonder wachtwoord en zonder delen.
    ========================================================= */
-const SYNC_URL = "";
+const SYNC_URL = "https://script.google.com/macros/s/AKfycbytYS1TGs9vSsejrBX-2jzMnIgfRSaXKa99iWx6tCiTEwBVqSeyOCHC7L8dY4JqdyuPtw/exec";
