@@ -64,7 +64,31 @@ const Store = (function () {
   });
 
   /** aantal geplande vakjes per weekdag (voor aanwezigheid) */
-  const plannedPerDay = WEEK.map((d) => (d.blocks || []).reduce((n, b) => n + (b.type === "sets" ? b.ex.reduce((m, e) => m + e[1].length, 0) : b.items.length), 0));
+  /** aantal vakjes (sets + lijst-items) in een training */
+  const itemsIn = (w) => (w.blocks || []).reduce((n, b) => n + (b.type === "sets" ? b.ex.reduce((m, e) => m + e[1].length, 0) : b.items.length), 0);
+
+  /* ---------- Eigen planning ----------
+     Standaard = schema van de trainer (WEEK).
+     plan.week[dag]   = vaste keuze voor elke week (sleutel van een training in WEEK)
+     plan.dates[datum] = alleen voor die ene datum                               */
+  const PLAN_KEY = "casrc-plan-v1";
+  /** trainingen waaruit je kunt kiezen (sleutels uit WEEK); de rustdag maar één keer */
+  const WORKOUTS = WEEK.filter((w, i, a) => !w.rest || w.active || a.findIndex((x) => x.rest && !x.active) === i).map((w) => w.key);
+  let plan = { week: null, dates: {} };
+  try {
+    const p = JSON.parse(localStorage.getItem(PLAN_KEY));
+    if (p && typeof p === "object") plan = { week: Array.isArray(p.week) && p.week.length === 7 ? p.week : null, dates: p.dates || {} };
+  } catch (e) {}
+  // oude eenmalige keuzes (> 8 weken) opruimen
+  (function () {
+    const cut = ymd(addDays(new Date(), -56));
+    Object.keys(plan.dates).forEach((d) => { if (d < cut) delete plan.dates[d]; });
+  })();
+  const savePlan = () => { try { localStorage.setItem(PLAN_KEY, JSON.stringify(plan)); return true; } catch (e) { return false; } };
+  const byKey = (k) => WEEK.find((w) => w.key === k);
+  const weekdayOf = (date) => (parseYmd(date).getDay() + 6) % 7;
+  const weeklyKey = (i) => (plan.week && byKey(plan.week[i]) ? plan.week[i] : WEEK[i].key);
+  const keyFor = (i, date) => (date && byKey(plan.dates[date]) ? plan.dates[date] : weeklyKey(i));
 
   /* ---------- Laden / opslaan ---------- */
   let log = {};
@@ -115,7 +139,35 @@ const Store = (function () {
 
   /* ---------- Publieke functies ---------- */
   return {
-    LOG_KEY, catalog, plannedPerDay, idFor,
+    LOG_KEY, catalog, idFor, WORKOUTS, byKey,
+
+    /* ---------- planning ---------- */
+    /** training (uit WEEK) voor weekdag i op deze datum */
+    workoutFor(i, date) { return byKey(keyFor(i, date)); },
+    workoutKey(i, date) { return keyFor(i, date); },
+    /** "week" als de keuze elke week geldt, "once" als alleen voor die datum, null = trainer */
+    planScope(i, date) { return plan.dates[date] && byKey(plan.dates[date]) ? "once" : plan.week && plan.week[i] !== WEEK[i].key ? "week" : null; },
+    isCustom(i, date) { return keyFor(i, date) !== WEEK[i].key; },
+    hasCustomPlan() { return !!plan.week || Object.keys(plan.dates).length > 0; },
+    setWorkout(i, date, key, scope) {
+      if (!byKey(key)) return false;
+      if (scope === "once") {
+        if (key === weeklyKey(i)) delete plan.dates[date]; else plan.dates[date] = key;
+      } else {
+        plan.week = plan.week || WEEK.map((w) => w.key);
+        plan.week[i] = key;
+        delete plan.dates[date];
+        if (plan.week.every((k, j) => k === WEEK[j].key)) plan.week = null;
+      }
+      return savePlan();
+    },
+    resetPlan() { plan = { week: null, dates: {} }; return savePlan(); },
+    /** standaarddagen (indexen) waarop de trainer deze training heeft staan */
+    coachDays(key) { const w = byKey(key); return WEEK.map((d, i) => (d.key === key || (w.rest && !w.active && d.rest && !d.active) ? i : -1)).filter((i) => i >= 0); },
+    /** aantal vakjes gepland op een datum */
+    plannedFor(date) { return itemsIn(byKey(keyFor(weekdayOf(date), date))); },
+    itemsIn,
+    get plan() { return plan; },
     ymd, parseYmd, addDays, mondayOf, isoWeek, dateOfWeekday,
     parseKg, fmtKg, strength, numReps,
 
@@ -159,7 +211,7 @@ const Store = (function () {
       return best;
     },
 
-    exportJson() { return JSON.stringify({ app: "casrc-training", version: 1, exported: new Date().toISOString(), log }, null, 1); },
+    exportJson() { return JSON.stringify({ app: "casrc-training", version: 1, exported: new Date().toISOString(), log, plan }, null, 1); },
 
     importJson(text) {
       const data = JSON.parse(text);
@@ -174,6 +226,10 @@ const Store = (function () {
           n++;
         });
       });
+      if (data.plan && typeof data.plan === "object") {
+        plan = { week: Array.isArray(data.plan.week) && data.plan.week.length === 7 ? data.plan.week : null, dates: data.plan.dates || {} };
+        savePlan();
+      }
       if (!persist()) throw new Error("saveFail");
       return n;
     }

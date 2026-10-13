@@ -50,6 +50,16 @@ Het icoon op je beginscherm ververst pas als je de app verwijdert en opnieuw toe
 - **iPhone (Safari):** open de link → deelknop → **Zet op beginscherm**.
 - **Android (Chrome):** open de link → menu (⋮) → **Toevoegen aan startscherm** / **App installeren**.
 
+## Zelf je week indelen
+
+Iedereen traint op andere dagen. Tik op een dag op **Wissel training** en kies Lower, Upper, Full, Primer, Gameday of Rust.
+- **Elke [dag]**: geldt vanaf nu iedere week.
+- **Alleen [datum]**: geldt voor die ene dag.
+
+Een gewijzigde dag krijgt een geel stipje in de dagstrook. Met **Terug naar schema trainer** zet je alles terug.
+Je gewichten en stats horen bij de oefening en de datum, dus wisselen maakt niets kapot.
+Je planning gaat mee in de back-up.
+
 ## Vorige keer en PR
 
 Onder elk kg-vakje staat wat je de vorige keer bij die set deed. Tik erop om dat gewicht over te nemen.
@@ -83,10 +93,10 @@ Na één keer openen met internet werkt alles ook zonder bereik, behalve de "Uit
 
 Pas `data.js` aan. Houd de **namen** van oefeningen gelijk als je hun geschiedenis wilt behouden.
 Verhoog daarna het versienummer, zodat telefoons de nieuwe versie ophalen:
-- in `sw.js`: `const VERSION = "v6";` en de `?v=6` achter de bestanden,
-- in `index.html` en `manifest.webmanifest`: elke `?v=6`.
+- in `sw.js`: `const VERSION = "v7";` en de `?v=7` achter de bestanden,
+- in `index.html` en `manifest.webmanifest`: elke `?v=7`.
 
-Tip: zoek-en-vervang `v=6` door `v=7` in die drie bestanden en zet `VERSION` op `"v7"`.
+Tip: zoek-en-vervang `v=7` door `v=8` in die drie bestanden en zet `VERSION` op `"v8"`.
 
 ## Lokaal testen
 

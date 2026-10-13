@@ -90,10 +90,12 @@
 
   function renderDays() {
     daysEl.innerHTML = WEEK.map((d, i) => {
+      const w = Store.workoutFor(i, Store.dateOfWeekday(i));
       const cls = ["day"];
-      if (d.rest && !d.active) cls.push("rest");
+      if (w.rest && !w.active) cls.push("rest");
       if (i === todayIdx) cls.push("today");
-      return `<button type="button" role="tab" class="${cls.join(" ")}" aria-selected="${i === sel}" aria-label="${esc(L(d.long))}: ${esc(L(d.title))}" data-i="${i}"><b>${esc(L(d.short))}</b><span>${esc(L(d.tag))}</span></button>`;
+      if (Store.isCustom(i, Store.dateOfWeekday(i))) cls.push("custom");
+      return `<button type="button" role="tab" class="${cls.join(" ")}" aria-selected="${i === sel}" aria-label="${esc(L(d.long))}: ${esc(L(w.title))}" data-i="${i}"><b>${esc(L(d.short))}</b><span>${esc(L(w.tag))}</span></button>`;
     }).join("");
   }
 
@@ -142,10 +144,13 @@
   }
 
   function renderDay() {
-    const d = WEEK[sel];
+    const day = WEEK[sel];
     const date = Store.dateOfWeekday(sel);
+    const d = Store.workoutFor(sel, date);
+    const scope = Store.planScope(sel, date);
     const dateTxt = Store.parseYmd(date).toLocaleDateString(I18N.locale, { day: "numeric", month: "short" });
-    let h = `<div class="dayhead"><div class="kicker">${esc(L(d.long))} ${esc(dateTxt)}${sel === todayIdx ? " · " + t("today") : ""}</div><h2>${esc(L(d.title))}</h2>`;
+    let h = `<div class="dayhead"><div class="kicker">${esc(L(day.long))} ${esc(dateTxt)}${sel === todayIdx ? " · " + t("today") : ""}${scope ? ` · <em class="own">${scope === "once" ? t("ownPlanOnce") : t("ownPlan")}</em>` : ""}</div>
+      <div class="titleline"><h2>${esc(L(d.title))}</h2><button type="button" class="swap" id="swap">${t("swap")}</button></div>`;
 
     if (d.rest) {
       h += `</div><div class="restcard"><p>${esc(L(d.text))}</p><ul>${d.tips.map((x) => `<li>${esc(L(x))}</li>`).join("")}</ul></div>`;
@@ -201,7 +206,7 @@
       h += `</section>`;
     });
 
-    h += `<button type="button" class="reset" id="reset">${esc(t("clearDay", { day: L(d.long).toLowerCase() }))}</button>`;
+    h += `<button type="button" class="reset" id="reset">${esc(t("clearDay", { day: L(day.long).toLowerCase() }))}</button>`;
     main.innerHTML = h + footer();
     updateProgress();
   }
@@ -261,6 +266,8 @@
       return;
     }
 
+    if (e.target.closest("#swap")) { openSheet(); return; }
+
     const r = e.target.closest("#reset");
     if (r) {
       const dayName = L(WEEK[sel].long).toLowerCase();
@@ -278,6 +285,80 @@
 
   main.addEventListener("input", (e) => { if (e.target.matches("input")) commitKg(e.target); });
   main.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.matches("input")) e.target.blur(); });
+
+  /* ---------- Training wisselen ---------- */
+  const sheet = $("sheet");
+  let lastFocus = null;
+
+  function openSheet() {
+    const date = Store.dateOfWeekday(sel);
+    const cur = Store.workoutKey(sel, date);
+    const dayName = L(WEEK[sel].long).toLowerCase();
+    const dateTxt = Store.parseYmd(date).toLocaleDateString(I18N.locale, { day: "numeric", month: "short" });
+    const scope = Store.planScope(sel, date) === "once" ? "once" : "week";
+    const opts = Store.WORKOUTS.map((k) => {
+      const w = Store.byKey(k);
+      const days = Store.coachDays(k).map((i) => L(WEEK[i].short)).join(" · ");
+      const on = k === cur;
+      return `<button type="button" class="opt${on ? " on" : ""}" data-key="${k}" aria-pressed="${on}">
+        <span class="opt-tag">${esc(L(w.tag))}</span>
+        <span class="opt-main"><b>${esc(L(w.title))}</b><small>${esc(t("coachOn", { days }))}</small></span>
+        <span class="opt-check" aria-hidden="true">${on ? CHECK : ""}</span>
+      </button>`;
+    }).join("");
+    sheet.querySelector(".sheet-body").innerHTML = `
+      <h2 id="sheet-title">${esc(t("sheetTitle", { day: dayName }))}</h2>
+      <div class="scope" role="radiogroup">
+        <button type="button" role="radio" data-scope="week" aria-checked="${scope === "week"}">${esc(t("scopeWeek", { day: dayName }))}</button>
+        <button type="button" role="radio" data-scope="once" aria-checked="${scope === "once"}">${esc(t("scopeOnce", { date: dateTxt }))}</button>
+      </div>
+      <div class="opts">${opts}</div>
+      <div class="sheet-foot">
+        ${Store.hasCustomPlan() ? `<button type="button" class="linkbtn" data-act="reset-plan">${t("resetPlan")}</button>` : "<span></span>"}
+        <button type="button" class="linkbtn" data-act="close">${t("close")}</button>
+      </div>`;
+    lastFocus = document.activeElement;
+    sheet.hidden = false;
+    document.body.classList.add("sheet-open");
+    requestAnimationFrame(() => sheet.classList.add("show"));
+    const first = sheet.querySelector(".opt.on") || sheet.querySelector(".opt");
+    first && first.focus({ preventScroll: true });
+  }
+
+  function closeSheet() {
+    sheet.classList.remove("show");
+    document.body.classList.remove("sheet-open");
+    setTimeout(() => { sheet.hidden = true; }, 180);
+    lastFocus && lastFocus.focus && lastFocus.focus({ preventScroll: true });
+  }
+
+  sheet.addEventListener("click", (e) => {
+    if (e.target === sheet) return closeSheet();
+    const sc = e.target.closest("[data-scope]");
+    if (sc) { sheet.querySelectorAll("[data-scope]").forEach((b) => b.setAttribute("aria-checked", b === sc)); return; }
+    const act = e.target.closest("[data-act]");
+    if (act && act.dataset.act === "close") return closeSheet();
+    if (act && act.dataset.act === "reset-plan") {
+      saved(Store.resetPlan());
+      closeSheet(); renderDays(); renderDay();
+      showToast(t("resetDone"));
+      return;
+    }
+    const opt = e.target.closest(".opt");
+    if (opt) {
+      const date = Store.dateOfWeekday(sel);
+      const scope = sheet.querySelector('[data-scope][aria-checked="true"]').dataset.scope;
+      saved(Store.setWorkout(sel, date, opt.dataset.key, scope));
+      buzz(15);
+      closeSheet(); renderDays(); renderDay();
+      const w = L(Store.byKey(opt.dataset.key).title);
+      showToast(scope === "once"
+        ? t("planOnce", { date: Store.parseYmd(date).toLocaleDateString(I18N.locale, { weekday: "long", day: "numeric", month: "short" }), workout: w })
+        : t("planSaved", { day: t("scopeWeek", { day: L(WEEK[sel].long).toLowerCase() }), workout: w }));
+    }
+  });
+
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !sheet.hidden) closeSheet(); });
 
   /* ---------- Rusttimer ---------- */
   const timerEl = $("timer");
@@ -361,6 +442,7 @@
   function showFlash() {
     hideFlash();
     $("flashText").textContent = t("flashText");
+    $("flashWord").textContent = t("flashWord");
     flash.hidden = false;
     flash.classList.add("blink");
     flashTimers.push(setTimeout(beep, 10000), setTimeout(beep, 20000));

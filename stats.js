@@ -297,7 +297,8 @@ const Stats = (function () {
 
     const idx = D.curIndex;
     const volDiff = D.vPrev.v > 0 ? ((D.vNow.v - D.vPrev.v) / D.vPrev.v) * 100 : null;
-    const planned = S.plannedPerDay.filter((n) => n > 0).length;
+    const mon = S.mondayOf(new Date());
+    const planned = [0, 1, 2, 3, 4, 5, 6].filter((i) => S.plannedFor(S.ymd(S.addDays(mon, i))) > 0).length;
 
     let h = "";
     if (demo) h += `<div class="demo-bar"><p>${t("demoBar")}</p><button type="button" data-act="mine">${t("backMine")}</button></div>`;
@@ -335,7 +336,7 @@ const Stats = (function () {
           return `<span class="hw" role="rowheader">${wLabel(w)}</span>` + dnames.map((n, i) => {
             const d = S.ymd(S.addDays(S.parseYmd(w), i));
             const a = D.activity[d] || 0;
-            const plan = S.plannedPerDay[i];
+            const plan = S.plannedFor(d);
             const ratio = a ? (plan ? Math.min(1, a / plan) : 1) : 0;
             const lvl = ratio === 0 ? 0 : ratio < 0.34 ? 1 : ratio < 0.67 ? 2 : ratio < 0.95 ? 3 : 4;
             const future = d > D.today;
@@ -350,7 +351,7 @@ const Stats = (function () {
     if (selEx) {
       const opts = WEEK.filter((d) => d.blocks).map((d) => {
         const ids = [...new Set(exIds.filter((id) => S.catalog[id].days[0] === WEEK.indexOf(d)))];
-        return ids.length ? `<optgroup label="${esc(L(d.long))}">${ids.map((id) => `<option value="${id}"${id === selEx ? " selected" : ""}>${esc(S.catalog[id].name)}</option>`).join("")}</optgroup>` : "";
+        return ids.length ? `<optgroup label="${esc(L(d.title))}">${ids.map((id) => `<option value="${id}"${id === selEx ? " selected" : ""}>${esc(S.catalog[id].name)}</option>`).join("")}</optgroup>` : "";
       }).join("");
       const ses = D.sessions[selEx].filter((s) => s.top > 0);
       const cat = S.catalog[selEx];

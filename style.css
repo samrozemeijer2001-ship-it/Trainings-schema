@@ -735,3 +735,172 @@ body.is-stats .timer { display: none; }
   .timer.finished .clock { animation: none; }
   .bar i { transition: none; }
 }
+
+/* =========================================================
+   v7 — rustigere knoppen bovenin, training wisselen, DONE
+   (staat onderaan zodat het eerdere regels overschrijft)
+   ========================================================= */
+
+/* Schema/Stats en NL/EN: gevulde segmenten zonder witte rand */
+.viewtabs,
+.navrow .lang {
+  border: 0;
+  background: var(--panel);
+  padding: 3px;
+  gap: 3px;
+}
+.viewtabs button,
+.navrow .lang button {
+  min-height: 40px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+}
+.viewtabs button + button,
+.navrow .lang button + button { border-left: 0; }
+.viewtabs button[aria-selected="true"] { background: var(--line); color: var(--chalk); box-shadow: inset 0 -2px 0 var(--cas); }
+.navrow .lang button[aria-pressed="true"] { background: var(--line); color: var(--cas); }
+.navrow .lang button:not([aria-pressed="true"]) { color: var(--muted); }
+.navrow .lang button { min-width: 40px; }
+
+/* Dagkop met wisselknop */
+.titleline { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.titleline h2 { min-width: 0; }
+.swap {
+  flex: none;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  background: var(--panel);
+  color: var(--chalk);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.swap:active { background: var(--line); }
+.own { font-style: normal; color: var(--cas); }
+
+/* Dag met eigen keuze: geel stipje */
+.day { position: relative; }
+.day.custom::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  background: var(--cas);
+}
+.day.custom[aria-selected="true"]::after { background: var(--cas-ink); }
+
+/* Keuzelijst (sheet van onderen) */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0);
+  transition: background .18s;
+}
+.sheet.show { background: rgba(0, 0, 0, .66); }
+.sheet-body {
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100dvh - var(--safe-t) - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--pitch);
+  border-top: 4px solid var(--cas);
+  padding: 18px max(var(--gutter), var(--safe-r)) calc(var(--safe-b) + 16px) max(var(--gutter), var(--safe-l));
+  transform: translateY(100%);
+  transition: transform .18s ease-out;
+}
+.sheet.show .sheet-body { transform: none; }
+.sheet h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 30px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+body.sheet-open { overflow: hidden; }
+
+.scope {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  padding: 3px;
+  background: var(--panel);
+}
+.scope button {
+  min-height: 40px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 6px;
+}
+.scope button[aria-checked="true"] { background: var(--line); color: var(--chalk); box-shadow: inset 0 -2px 0 var(--cas); }
+
+.opts { display: grid; margin-top: 12px; }
+.opt {
+  display: grid;
+  grid-template-columns: 4.6em minmax(0, 1fr) 28px;
+  gap: 12px;
+  align-items: center;
+  min-height: 60px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--chalk);
+  text-align: left;
+}
+.opt-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--panel);
+  padding: 6px 0;
+  text-align: center;
+}
+.opt-main { display: grid; gap: 2px; min-width: 0; }
+.opt-main b { font-family: var(--display); font-weight: 900; font-size: 24px; line-height: 1; text-transform: uppercase; }
+.opt-main small { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.opt-check { width: 28px; height: 28px; display: grid; place-items: center; }
+.opt-check svg { width: 18px; height: 18px; }
+.opt.on .opt-tag { background: var(--cas); color: var(--cas-ink); }
+.opt.on .opt-check { background: var(--cas); }
+.opt:active { background: var(--panel); }
+
+.sheet-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.linkbtn {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* DONE past ook op smalle telefoons */
+.flash strong { font-size: clamp(84px, 27vw, 180px); letter-spacing: .01em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .sheet-body { transition: none; }
+}
