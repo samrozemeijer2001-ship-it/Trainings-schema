@@ -64,7 +64,8 @@ Je planning gaat mee in de back-up.
 ## Delen met de trainers (Google Sheet)
 
 Met `SYNC_URL` in `sync.js` ingevuld gaat elke gelogde set automatisch naar een Google Sheet.
-Spelers kiezen één keer hun naam uit de lijst (na de teamcode, of via de link `?team=CODE`).
+Bij de eerste keer openen vult een speler het wachtwoord in (gecontroleerd door het script) en kiest hij één keer zijn naam.
+Zonder wachtwoord kom je de app niet in.
 Offline gelogd? Dan wordt het later verstuurd. Zie `STAPPENPLAN.md` in de map `google-sheet`.
 Laat je `SYNC_URL` leeg, dan werkt de app alleen lokaal, zoals voorheen.
 

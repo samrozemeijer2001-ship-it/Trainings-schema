@@ -956,7 +956,9 @@ body.onb-open { overflow: hidden; }
   -webkit-appearance: none;
   appearance: none;
 }
-#onb-code { font-family: var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+#onb-code { font-family: var(--mono); letter-spacing: .08em; }
+/* app verborgen tot het wachtwoord klopt */
+body.locked > :not(.onb):not(svg.defs) { visibility: hidden; }
 .onb-msg { margin: 0; min-height: 1.4em; font-size: 15px; color: var(--cas); }
 .onb-main {
   min-height: 52px;

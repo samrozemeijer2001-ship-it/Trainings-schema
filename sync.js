@@ -2,9 +2,13 @@
    Delen met de trainers (Google Sheet)
 
    1. Plak hieronder de webapp-URL van je Google Apps Script.
-      Leeg laten = de app werkt alleen lokaal, zoals voorheen.
-   2. Spelers vullen één keer de teamcode in (of openen de link
-      .../?team=JOUWCODE) en kiezen hun naam uit de lijst.
+      Leeg laten = de app werkt alleen lokaal, zonder wachtwoord.
+   2. Bij de eerste keer openen vult een speler het wachtwoord in
+      (TEAM_CODE in Code.gs). Het script controleert het; het
+      wachtwoord staat dus niet in deze code. Daarna kiest hij
+      één keer zijn naam. Beide worden op de telefoon onthouden.
+   3. Wachtwoord veranderd in Code.gs? Dan vraagt de app het
+      opnieuw. Zo sluit je de toegang als het toch rondgaat.
 
    Alles wat een speler logt, gaat per set naar de sheet.
    Offline? Dan wacht het in een wachtrij tot er weer internet is.
@@ -24,16 +28,6 @@ const Sync = (function () {
 
   const enabled = !!SYNC_URL;
 
-  // teamcode uit de link (?team=CODE) overnemen en uit de adresbalk halen
-  try {
-    const u = new URL(location.href);
-    const code = u.searchParams.get("team");
-    if (code) {
-      set(K.team, code.trim());
-      u.searchParams.delete("team");
-      history.replaceState(null, "", u.pathname + u.search + u.hash);
-    }
-  } catch (e) {}
 
   let device = get(K.device, null);
   if (!device) {
@@ -52,6 +46,9 @@ const Sync = (function () {
   let timer = null;
 
   const player = () => get(K.player, null);
+  const teamCode = () => get(K.team, "");
+  const unlocked = () => !enabled || !!teamCode();
+  if (!unlocked()) document.body.classList.add("locked");
   const sharing = () => enabled && !!player() && !get(K.local, false);
 
   function enqueue(changes) {
@@ -97,7 +94,7 @@ const Sync = (function () {
     if (navigator.onLine === false) { state = "offline"; refreshBox(); return; }
     busy = true;
     const p = player();
-    const team = get(K.team, "");
+    const team = teamCode();
     try {
       const keys = Object.keys(queue);
       for (let i = 0; i < keys.length; i += 300) {
@@ -196,6 +193,7 @@ const Sync = (function () {
   }
 
   function close() {
+    if (!unlocked()) return;
     if (!ov) return;
     ov.remove(); ov = null;
     document.body.classList.remove("onb-open");
@@ -211,11 +209,12 @@ const Sync = (function () {
     frame(`<h2>${esc(t("onbWelcome"))}</h2><p class="onb-text">${esc(t("onbCodeText"))}</p>
       <form class="onb-form" data-form="code">
         <label for="onb-code">${esc(t("onbCode"))}</label>
-        <input id="onb-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" value="${esc(get(K.team, ""))}">
+        <input id="onb-code" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" enterkeyhint="go">
         <p class="onb-msg" id="onb-msg" role="status">${msg ? esc(msg) : ""}</p>
         <button type="button" class="onb-main" data-onb="code">${esc(t("onbNext"))}</button>
-      </form>
-      <div class="onb-foot"><button type="button" class="linkbtn" data-onb="later">${esc(t("onbLater"))}</button><button type="button" class="linkbtn" data-onb="local">${esc(t("onbLocal"))}</button></div>`);
+      </form>`);
+    document.body.classList.add("locked");
+    setTimeout(() => { const i = ov && ov.querySelector("#onb-code"); i && i.focus(); }, 50);
     const i = ov.querySelector("#onb-code");
     i.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); checkCode(); } });
   }
@@ -239,9 +238,10 @@ const Sync = (function () {
       const res = await loadPlayers(code);
       if (!res || !res.ok) { msg.textContent = t("onbWrongCode"); return; }
       set(K.team, code);
+      document.body.classList.remove("locked");
       list = res.players || [];
       set(K.list, list);
-      stepWho();
+      if (player() || get(K.local, false)) close(); else stepWho();
     } catch (e) {
       msg.textContent = t("onbOffline");
     }
@@ -305,6 +305,7 @@ const Sync = (function () {
     if (!b) return;
     const a = b.dataset.onb;
     if (a === "code") checkCode();
+    if (a === "retry") loadAndPick();
     if (a === "later") close();
     if (a === "local") { set(K.local, true); close(); refreshBox(); }
     if (a === "who") stepWho();
@@ -317,11 +318,29 @@ const Sync = (function () {
     if (a === "yes") choose({ id: b.dataset.id, name: b.dataset.name });
   }
 
+  function stepLoading(msg, retry) {
+    frame(`<h2>${esc(t("onbWho"))}</h2><p class="onb-text">${esc(msg || t("onbChecking"))}</p>
+      ${retry ? `<div class="onb-form"><button type="button" class="onb-main" data-onb="retry">${esc(t("onbRetry"))}</button></div>` : ""}
+      <div class="onb-foot"><button type="button" class="linkbtn" data-onb="later">${esc(t("onbLater"))}</button><button type="button" class="linkbtn" data-onb="local">${esc(t("onbLocal"))}</button></div>`);
+  }
+
+  async function loadAndPick() {
+    stepLoading();
+    try {
+      const res = await loadPlayers(teamCode());
+      if (!res || !res.ok) { stepLoading(t("onbSetupErr"), true); return; }
+      list = res.players || [];
+      set(K.list, list);
+      stepWho();
+    } catch (e) {
+      if (list.length) stepWho(); else stepLoading(t("onbOffline"), true);
+    }
+  }
+
   function openOnboarding() {
     if (!enabled) return;
-    if (get(K.team, "")) {
-      if (list.length) stepWho(); else { stepCode(); checkCode(); }
-    } else stepCode();
+    if (teamCode()) loadAndPick();
+    else stepCode();
   }
 
   /* ---------- start ---------- */
@@ -331,7 +350,7 @@ const Sync = (function () {
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") flush(); else if (pending()) flush(); });
     setInterval(() => { if (pending()) flush(); }, 120000);
     window.addEventListener("load", () => {
-      if (!player() && !get(K.local, false)) openOnboarding();
+      if (!unlocked() || (!player() && !get(K.local, false))) openOnboarding();
       else flush();
     });
   }
