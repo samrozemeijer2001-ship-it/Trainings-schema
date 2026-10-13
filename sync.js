@@ -15,7 +15,7 @@
    Bij een overstap naar een andere database hoeft alleen dit
    bestand te veranderen.
    ========================================================= */
-const SYNC_URL = "";
+const SYNC_URL = "https://script.google.com/macros/s/AKfycbytYS1TGs9vSsejrBX-2jzMnIgfRSaXKa99iWx6tCiTEwBVqSeyOCHC7L8dY4JqdyuPtw/exec";
 
 const Sync = (function () {
   "use strict";
