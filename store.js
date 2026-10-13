@@ -245,6 +245,24 @@ const Store = (function () {
       return n;
     },
 
+    /** rijen uit de sheet terugzetten; vult alleen lege plekken (telefoon wint), zonder opnieuw te versturen */
+    mergeRows(rows) {
+      let n = 0;
+      (rows || []).forEach((r) => {
+        if (!r || !/^\d{4}-\d{2}-\d{2}$/.test(r.date) || !r.exId) return;
+        const si = (Number(r.set) || 1) - 1;
+        const kg = typeof r.kg === "number" && isFinite(r.kg) ? r.kg : null;
+        const e = entry(r.exId, r.date, true);
+        let changed = false;
+        if (kg != null && e.kg[si] == null) { e.kg[si] = kg; e.reps[si] = r.reps == null || r.reps === "" ? null : r.reps; changed = true; }
+        if (r.done && !e.done[si]) { e.done[si] = 1; changed = true; }
+        if (changed) n++;
+        cleanup(r.exId, r.date);
+      });
+      if (n) persist();
+      return n;
+    },
+
     /* ---------- wijzigingen doorgeven (voor synchronisatie) ---------- */
     onChange(fn) { listeners.push(fn); },
     /** alle sets met een gewicht of vinkje: [[oefening, datum, set], ...] */

@@ -87,6 +87,8 @@
   });
 
   window.addEventListener("hashchange", () => { readHash(); showView(); });
+  // na terughalen uit de sheet: scherm opnieuw opbouwen
+  window.addEventListener("casrc:data", () => showView());
 
   function renderDays() {
     daysEl.innerHTML = WEEK.map((d, i) => {

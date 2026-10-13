@@ -1,8 +1,9 @@
 /* =========================================================
    Delen met de trainers (Google Sheet)
 
-   1. Plak hieronder de webapp-URL van je Google Apps Script.
-      Leeg laten = de app werkt alleen lokaal, zonder wachtwoord.
+   1. De webapp-URL van je Google Apps Script staat in config.js
+      (zo overschrijf je hem niet bij een update van dit bestand).
+      Leeg = de app werkt alleen lokaal, zonder wachtwoord.
    2. Bij de eerste keer openen vult een speler het wachtwoord in
       (TEAM_CODE in Code.gs). Het script controleert het; het
       wachtwoord staat dus niet in deze code. Daarna kiest hij
@@ -10,13 +11,14 @@
    3. Wachtwoord veranderd in Code.gs? Dan vraagt de app het
       opnieuw. Zo sluit je de toegang als het toch rondgaat.
 
-   Alles wat een speler logt, gaat per set naar de sheet.
+   Alles wat een speler logt, gaat per set naar de sheet: gebundeld
+   (na een minuut stilte) en meteen als de app gesloten wordt.
    Offline? Dan wacht het in een wachtrij tot er weer internet is.
+   Bij het kiezen van een naam haalt de app eerdere trainingen van
+   die speler uit de sheet terug (nieuwe of gewiste telefoon).
    Bij een overstap naar een andere database hoeft alleen dit
    bestand te veranderen.
    ========================================================= */
-const SYNC_URL = "https://script.google.com/macros/s/AKfycbytYS1TGs9vSsejrBX-2jzMnIgfRSaXKa99iWx6tCiTEwBVqSeyOCHC7L8dY4JqdyuPtw/exec";
-
 const Sync = (function () {
   "use strict";
 
@@ -26,7 +28,8 @@ const Sync = (function () {
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const slug = (s) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-  const enabled = !!SYNC_URL;
+  const URL_ = typeof SYNC_URL !== "undefined" ? String(SYNC_URL).trim() : "";
+  const enabled = !!URL_;
 
 
   let device = get(K.device, null);
@@ -55,7 +58,7 @@ const Sync = (function () {
     if (!sharing()) return;
     changes.forEach(([id, date, si]) => { queue[id + "|" + date + "|" + si] = ++version; });
     saveQueue();
-    schedule(3000);
+    schedule(60000); // bundelen: pas versturen na een minuut zonder wijzigingen
     refreshBox();
   }
 
@@ -79,17 +82,19 @@ const Sync = (function () {
     };
   }
 
-  async function post(body) {
+  async function post(body, keepalive) {
     const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 20000);
+    const to = setTimeout(() => ctrl.abort(), 25000);
     try {
-      // geen extra headers: zo accepteert Google het verzoek zonder voorcontrole
-      const res = await fetch(SYNC_URL, { method: "POST", body: JSON.stringify(body), signal: ctrl.signal, redirect: "follow" });
+      // geen extra headers: zo accepteert Google het verzoek zonder voorcontrole.
+      // keepalive: het verzoek gaat ook door als de app net gesloten wordt.
+      const res = await fetch(URL_, { method: "POST", body: JSON.stringify(body), signal: ctrl.signal, redirect: "follow", keepalive: !!keepalive });
       return await res.json();
     } finally { clearTimeout(to); }
   }
 
-  async function flush() {
+  async function flush(closing) {
+    clearTimeout(timer);
     if (!sharing() || busy || !pending()) return;
     if (navigator.onLine === false) { state = "offline"; refreshBox(); return; }
     busy = true;
@@ -97,11 +102,12 @@ const Sync = (function () {
     const team = teamCode();
     try {
       const keys = Object.keys(queue);
-      for (let i = 0; i < keys.length; i += 300) {
-        const batch = keys.slice(i, i + 300);
+      const size = closing ? 150 : 300; // keepalive mag maar ~64 kB meesturen
+      for (let i = 0; i < keys.length; i += size) {
+        const batch = keys.slice(i, i + size);
         const snap = {};
         batch.forEach((k) => { snap[k] = queue[k]; });
-        const res = await post({ code: team, player: p, device, app: "casrc-training", rows: batch.map(rowFor) });
+        const res = await post({ code: team, player: p, device, app: "casrc-training", rows: batch.map(rowFor) }, closing);
         if (!res || !res.ok) {
           state = res && res.error === "code" ? "code" : "error";
           break;
@@ -141,6 +147,7 @@ const Sync = (function () {
       <p class="sync-line ${cls}"><span class="dot" aria-hidden="true"></span>${esc(line)}</p>
       <div class="tool-row">
         <button type="button" data-sync="now">${esc(t("syncNow"))}</button>
+        <button type="button" data-sync="restore">${esc(t("syncRestore"))}</button>
         <button type="button" data-sync="switch">${esc(t("syncSwitch"))}</button>
       </div>
     </div>`;
@@ -161,6 +168,14 @@ const Sync = (function () {
       flush().then(() => { if (state === "ok" && window.showToast) showToast(t("syncSent")); });
     }
     if (a === "join") { set(K.local, false); openOnboarding(); }
+    if (a === "restore") {
+      b.disabled = true;
+      restore().then((n) => {
+        b.disabled = false;
+        if (!window.showToast) return;
+        showToast(n < 0 ? t("syncError") : n === 0 ? t("syncRestoreNone") : t("syncRestored", { n }));
+      });
+    }
     if (a === "switch") {
       if (!b.classList.contains("arm")) {
         b.classList.add("arm");
@@ -223,7 +238,7 @@ const Sync = (function () {
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 15000);
     try {
-      const res = await fetch(SYNC_URL + "?action=players&code=" + encodeURIComponent(code), { signal: ctrl.signal, redirect: "follow" });
+      const res = await fetch(URL_ + "?action=players&code=" + encodeURIComponent(code), { signal: ctrl.signal, redirect: "follow" });
       return await res.json();
     } finally { clearTimeout(to); }
   }
@@ -284,14 +299,33 @@ const Sync = (function () {
       <div class="onb-foot"><button type="button" class="linkbtn" data-onb="who">${esc(t("onbBack"))}</button></div>`);
   }
 
-  function choose(p) {
+  /** eerdere trainingen van deze speler uit de sheet terugzetten (vult alleen lege plekken) */
+  async function restore() {
+    const p = player();
+    if (!enabled || !p) return -1;
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 25000);
+    try {
+      const res = await fetch(URL_ + "?action=mine&code=" + encodeURIComponent(teamCode()) + "&player=" + encodeURIComponent(p.id), { signal: ctrl.signal, redirect: "follow" });
+      const data = await res.json();
+      if (!data || !data.ok) return -1;
+      const n = Store.mergeRows(data.rows || []);
+      if (n) window.dispatchEvent(new Event("casrc:data"));
+      return n;
+    } catch (e) { return -1; }
+    finally { clearTimeout(to); }
+  }
+
+  async function choose(p) {
+    const local = Store.allSets(); // wat al op deze telefoon stond
     set(K.player, { id: p.id, name: p.name });
     set(K.local, false);
     close();
-    // alles wat al op deze telefoon staat meteen meesturen
-    enqueue(Store.allSets());
-    flush();
     if (window.showToast) showToast(t("onbWelcomeName", { name: p.name.split(" ")[0] }));
+    const n = await restore();
+    if (n > 0 && window.showToast) showToast(t("syncRestored", { n }));
+    enqueue(local);
+    flush();
   }
 
   function onInput(e) {
@@ -347,7 +381,8 @@ const Sync = (function () {
   Store.onChange(enqueue);
   if (enabled) {
     window.addEventListener("online", () => flush());
-    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") flush(); else if (pending()) flush(); });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") flush(); else if (pending()) flush(true); });
+    window.addEventListener("pagehide", () => { if (pending()) flush(true); });
     setInterval(() => { if (pending()) flush(); }, 120000);
     window.addEventListener("load", () => {
       if (!unlocked() || (!player() && !get(K.local, false))) openOnboarding();
@@ -355,5 +390,5 @@ const Sync = (function () {
     });
   }
 
-  return { statusHtml, flush, open: openOnboarding, get enabled() { return enabled; } };
+  return { statusHtml, flush, restore, open: openOnboarding, get enabled() { return enabled; } };
 })();

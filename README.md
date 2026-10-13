@@ -20,7 +20,8 @@ en een Stats-pagina met je progressie.
 | `data.js` | **Het schema.** Oefeningen, sets, reps, rusttijden en spiergroepen |
 | `store.js` | Opslag van je gewichten en vinkjes + rekenwerk |
 | `stats.js` | De Stats-pagina en grafieken |
-| `sync.js` | Delen met de trainers via de Google Sheet (zet hier `SYNC_URL`) |
+| `config.js` | **Instellingen:** de URL van je Google-script (`SYNC_URL`). Eén keer invullen, daarna niet meer overschrijven |
+| `sync.js` | Delen met de trainers via de Google Sheet |
 | `app.js` | Schema-weergave, navigatie en rusttimer |
 | `sw.js` | Zorgt dat de app offline opent na het eerste bezoek |
 | `manifest.webmanifest` + `icons/` | Nodig voor "Zet op beginscherm" |
@@ -63,7 +64,7 @@ Je planning gaat mee in de back-up.
 
 ## Delen met de trainers (Google Sheet)
 
-Met `SYNC_URL` in `sync.js` ingevuld gaat elke gelogde set automatisch naar een Google Sheet.
+Met `SYNC_URL` in `config.js` ingevuld gaat elke gelogde set automatisch naar een Google Sheet.
 Bij de eerste keer openen vult een speler het wachtwoord in (gecontroleerd door het script) en kiest hij één keer zijn naam.
 Zonder wachtwoord kom je de app niet in.
 Offline gelogd? Dan wordt het later verstuurd. Zie `STAPPENPLAN.md` in de map `google-sheet`.
@@ -102,10 +103,10 @@ Na één keer openen met internet werkt alles ook zonder bereik, behalve de "Uit
 
 Pas `data.js` aan. Houd de **namen** van oefeningen gelijk als je hun geschiedenis wilt behouden.
 Verhoog daarna het versienummer, zodat telefoons de nieuwe versie ophalen:
-- in `sw.js`: `const VERSION = "v8";` en de `?v=8` achter de bestanden,
-- in `index.html` en `manifest.webmanifest`: elke `?v=8`.
+- in `sw.js`: `const VERSION = "v10";` en de `?v=10` achter de bestanden,
+- in `index.html` en `manifest.webmanifest`: elke `?v=10`.
 
-Tip: zoek-en-vervang `v=8` door `v=9` in die drie bestanden en zet `VERSION` op `"v9"`.
+Tip: zoek-en-vervang `v=10` door `v=11` in die drie bestanden en zet `VERSION` op `"v11"`.
 
 ## Lokaal testen
 
