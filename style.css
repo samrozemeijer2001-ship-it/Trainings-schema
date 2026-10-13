@@ -904,3 +904,104 @@ body.sheet-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .sheet, .sheet-body { transition: none; }
 }
+
+/* =========================================================
+   v8 — eerste keer: teamcode + naam kiezen, en deelstatus
+   ========================================================= */
+.onb {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--pitch);
+  color: var(--chalk);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(var(--safe-b) + 24px);
+}
+body.onb-open { overflow: hidden; }
+.onb-hoops { height: 22px; margin-top: var(--safe-t); background: repeating-linear-gradient(180deg, var(--cas) 0 7px, var(--pitch) 7px 11px); }
+.onb-body {
+  max-width: 520px;
+  margin-inline: auto;
+  padding: 24px max(var(--gutter), var(--safe-r)) 0 max(var(--gutter), var(--safe-l));
+  display: grid;
+  gap: 12px;
+}
+.onb-mark { width: 56px; height: 56px; }
+.onb h2 {
+  margin: 4px 0 0;
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(32px, 10vw, 44px);
+  line-height: .95;
+  text-transform: uppercase;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+.onb-text { margin: 0; color: var(--muted); font-size: 17px; max-width: 38ch; }
+.onb-form { display: grid; gap: 8px; margin-top: 8px; }
+.onb-form label { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.onb-form input, .onb-search input {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-bottom: 3px solid var(--cas);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--chalk);
+  font-family: var(--body);
+  font-size: 20px;
+  font-weight: 600;
+  padding: 10px 12px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+#onb-code { font-family: var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.onb-msg { margin: 0; min-height: 1.4em; font-size: 15px; color: var(--cas); }
+.onb-main {
+  min-height: 52px;
+  border: 0;
+  background: var(--cas);
+  color: var(--cas-ink);
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 22px;
+  text-transform: uppercase;
+}
+.onb-main:active { filter: brightness(.9); }
+.onb-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 4px; }
+.onb-search { display: block; position: sticky; top: 0; z-index: 1; background: var(--pitch); padding-block: 4px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.onb-list { display: grid; }
+.onb-group {
+  margin: 14px 0 2px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--cas);
+}
+.onb-name {
+  min-height: 48px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--chalk);
+  font-size: 19px;
+  font-weight: 600;
+  text-align: left;
+  padding: 0 2px;
+}
+.onb-name:active { background: var(--panel); }
+.onb-empty { color: var(--muted); margin: 12px 0; }
+
+/* deelstatus in Stats */
+.sync-box { display: grid; gap: 6px; margin-top: 10px; }
+.sync-box p { margin: 0; }
+.sync-who { font-family: var(--display); font-weight: 900; font-size: 22px; text-transform: uppercase; line-height: 1; }
+.sync-line { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.sync-line .dot { width: 8px; height: 8px; background: var(--cas); flex: none; }
+.sync-line.warn { color: var(--chalk); }
+.sync-line.warn .dot { background: #e0573a; }
+.sync-box .tool-row { margin-top: 6px; }
+.tool-row button.arm { border-color: var(--cas); color: var(--cas); }

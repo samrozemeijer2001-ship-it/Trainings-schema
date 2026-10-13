@@ -398,7 +398,8 @@ const Stats = (function () {
   }
 
   function dataTools() {
-    return `<section class="st tools"><div class="st-head"><h3>${t("dataTitle")}</h3><p>${t("dataSub")}</p></div>
+    const share = typeof Sync !== "undefined" && Sync.enabled ? `<div class="st-head sub"><h4>${t("syncTitle")}</h4></div><div id="sync-box">${Sync.statusHtml()}</div>` : "";
+    return `<section class="st tools">${share}<div class="st-head${share ? " sub" : ""}"><h3>${t("dataTitle")}</h3><p>${t("dataSub")}</p></div>
       <div class="tool-row">
         <button type="button" data-act="export">${t("exportBtn")}</button>
         <label class="filebtn" for="import-file">${t("importBtn")}</label>

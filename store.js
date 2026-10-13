@@ -94,6 +94,9 @@ const Store = (function () {
   let log = {};
   try { log = JSON.parse(localStorage.getItem(LOG_KEY)) || {}; } catch (e) { log = {}; }
 
+  const listeners = [];
+  const emit = (changes) => { if (changes.length) listeners.forEach((fn) => { try { fn(changes); } catch (e) {} }); };
+
   function persist() {
     try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); return true; }
     catch (e) { return false; }
@@ -180,20 +183,27 @@ const Store = (function () {
       const e = entry(id, date, true);
       if (on) e.done[si] = 1; else e.done[si] = 0;
       cleanup(id, date);
-      return persist();
+      const ok = persist();
+      emit([[id, date, si]]);
+      return ok;
     },
 
     setKg(id, date, si, kg, reps) {
       const e = entry(id, date, true);
       e.kg[si] = kg; e.reps[si] = kg == null ? null : reps;
       cleanup(id, date);
-      return persist();
+      const ok = persist();
+      emit([[id, date, si]]);
+      return ok;
     },
 
     /** vinkjes van één datum wissen (gewichten blijven) */
     clearDone(date) {
-      Object.keys(log).forEach((id) => { const e = log[id][date]; if (e) { e.done = []; cleanup(id, date); } });
-      return persist();
+      const changed = [];
+      Object.keys(log).forEach((id) => { const e = log[id][date]; if (e) { e.done.forEach((v, si) => { if (v) changed.push([id, date, si]); }); e.done = []; cleanup(id, date); } });
+      const ok = persist();
+      emit(changed);
+      return ok;
     },
 
     /** laatste eerdere sessie met gewicht */
@@ -231,7 +241,28 @@ const Store = (function () {
         savePlan();
       }
       if (!persist()) throw new Error("saveFail");
+      emit(this.allSets());
       return n;
+    },
+
+    /* ---------- wijzigingen doorgeven (voor synchronisatie) ---------- */
+    onChange(fn) { listeners.push(fn); },
+    /** alle sets met een gewicht of vinkje: [[oefening, datum, set], ...] */
+    allSets() {
+      const out = [];
+      Object.keys(log).forEach((id) => Object.keys(log[id]).forEach((d) => {
+        const e = log[id][d];
+        const n = Math.max(e.kg.length, e.done.length);
+        for (let si = 0; si < n; si++) if (e.kg[si] != null || e.done[si]) out.push([id, d, si]);
+      }));
+      return out;
+    },
+    /** reps voor een set: wat er gelogd is, anders uit het schema */
+    repsFor(id, date, si) {
+      const e = entry(id, date);
+      if (e && e.reps[si] != null) return e.reps[si];
+      const c = catalog[id];
+      return c && c.reps[si] != null ? c.reps[si] : null;
     }
   };
 })();

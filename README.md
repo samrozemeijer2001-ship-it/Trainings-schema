@@ -20,6 +20,7 @@ en een Stats-pagina met je progressie.
 | `data.js` | **Het schema.** Oefeningen, sets, reps, rusttijden en spiergroepen |
 | `store.js` | Opslag van je gewichten en vinkjes + rekenwerk |
 | `stats.js` | De Stats-pagina en grafieken |
+| `sync.js` | Delen met de trainers via de Google Sheet (zet hier `SYNC_URL`) |
 | `app.js` | Schema-weergave, navigatie en rusttimer |
 | `sw.js` | Zorgt dat de app offline opent na het eerste bezoek |
 | `manifest.webmanifest` + `icons/` | Nodig voor "Zet op beginscherm" |
@@ -60,6 +61,13 @@ Een gewijzigde dag krijgt een geel stipje in de dagstrook. Met **Terug naar sche
 Je gewichten en stats horen bij de oefening en de datum, dus wisselen maakt niets kapot.
 Je planning gaat mee in de back-up.
 
+## Delen met de trainers (Google Sheet)
+
+Met `SYNC_URL` in `sync.js` ingevuld gaat elke gelogde set automatisch naar een Google Sheet.
+Spelers kiezen één keer hun naam uit de lijst (na de teamcode, of via de link `?team=CODE`).
+Offline gelogd? Dan wordt het later verstuurd. Zie `STAPPENPLAN.md` in de map `google-sheet`.
+Laat je `SYNC_URL` leeg, dan werkt de app alleen lokaal, zoals voorheen.
+
 ## Vorige keer en PR
 
 Onder elk kg-vakje staat wat je de vorige keer bij die set deed. Tik erop om dat gewicht over te nemen.
@@ -93,10 +101,10 @@ Na één keer openen met internet werkt alles ook zonder bereik, behalve de "Uit
 
 Pas `data.js` aan. Houd de **namen** van oefeningen gelijk als je hun geschiedenis wilt behouden.
 Verhoog daarna het versienummer, zodat telefoons de nieuwe versie ophalen:
-- in `sw.js`: `const VERSION = "v7";` en de `?v=7` achter de bestanden,
-- in `index.html` en `manifest.webmanifest`: elke `?v=7`.
+- in `sw.js`: `const VERSION = "v8";` en de `?v=8` achter de bestanden,
+- in `index.html` en `manifest.webmanifest`: elke `?v=8`.
 
-Tip: zoek-en-vervang `v=7` door `v=8` in die drie bestanden en zet `VERSION` op `"v8"`.
+Tip: zoek-en-vervang `v=8` door `v=9` in die drie bestanden en zet `VERSION` op `"v9"`.
 
 ## Lokaal testen
 
