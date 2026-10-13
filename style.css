@@ -1007,3 +1007,12 @@ body.locked > :not(.onb):not(svg.defs) { visibility: hidden; }
 .sync-line.warn .dot { background: #e0573a; }
 .sync-box .tool-row { margin-top: 6px; }
 .tool-row button.arm { border-color: var(--cas); color: var(--cas); }
+
+/* namen die al aan een telefoon gekoppeld zijn */
+.onb-name.taken { color: var(--muted); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.onb-name small { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); flex: none; }
+
+/* inlogcode */
+.onb-form input.otp { font-family: var(--mono); font-size: 30px; letter-spacing: .4em; text-align: center; padding-left: .4em; }
+.onb-hint { margin: 0; font-size: 14px; color: var(--muted); }
+.linkbtn:disabled { text-decoration: none; opacity: .6; cursor: default; }

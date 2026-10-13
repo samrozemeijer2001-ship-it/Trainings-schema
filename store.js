@@ -245,6 +245,9 @@ const Store = (function () {
       return n;
     },
 
+    /** alle trainingsdata van deze telefoon wissen (bij wisselen van speler) */
+    resetAll() { log = {}; return persist(); },
+
     /** rijen uit de sheet terugzetten; vult alleen lege plekken (telefoon wint), zonder opnieuw te versturen */
     mergeRows(rows) {
       let n = 0;

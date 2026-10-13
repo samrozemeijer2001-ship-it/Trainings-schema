@@ -65,8 +65,8 @@ Je planning gaat mee in de back-up.
 ## Delen met de trainers (Google Sheet)
 
 Met `SYNC_URL` in `config.js` ingevuld gaat elke gelogde set automatisch naar een Google Sheet.
-Bij de eerste keer openen vult een speler het wachtwoord in (gecontroleerd door het script) en kiest hij één keer zijn naam.
-Zonder wachtwoord kom je de app niet in.
+Per apparaat logt een speler één keer in: wachtwoord → naam → (eerste keer) e-mail → code uit de mail.
+Daarna blijft het apparaat ingelogd; op een tweede apparaat komen al zijn trainingen mee.
 Offline gelogd? Dan wordt het later verstuurd. Zie `STAPPENPLAN.md` in de map `google-sheet`.
 Laat je `SYNC_URL` leeg, dan werkt de app alleen lokaal, zoals voorheen.
 
@@ -103,10 +103,10 @@ Na één keer openen met internet werkt alles ook zonder bereik, behalve de "Uit
 
 Pas `data.js` aan. Houd de **namen** van oefeningen gelijk als je hun geschiedenis wilt behouden.
 Verhoog daarna het versienummer, zodat telefoons de nieuwe versie ophalen:
-- in `sw.js`: `const VERSION = "v10";` en de `?v=10` achter de bestanden,
-- in `index.html` en `manifest.webmanifest`: elke `?v=10`.
+- in `sw.js`: `const VERSION = "v12";` en de `?v=12` achter de bestanden,
+- in `index.html` en `manifest.webmanifest`: elke `?v=12`.
 
-Tip: zoek-en-vervang `v=10` door `v=11` in die drie bestanden en zet `VERSION` op `"v11"`.
+Tip: zoek-en-vervang `v=12` door `v=13` in die drie bestanden en zet `VERSION` op `"v13"`.
 
 ## Lokaal testen
 
